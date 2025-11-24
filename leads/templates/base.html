@@ -222,6 +222,24 @@
                         <span>New Lead</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/add-staff/' %}active{% endif %}" href="{% url 'add_staff' %}">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Add Staff</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/assign-task/' %}active{% endif %}" href="{% url 'assign_task' %}">
+                        <i class="fas fa-tasks"></i>
+                        <span>Assign Task</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/manage-task/' %}active{% endif %}" href="{% url 'manage_task' %}">
+                        <i class="fas fa-users"></i>
+                        <span>Manage Task</span>
+                    </a>
+                </li>
                 <!-- <li class="nav-item">
                     <a href="{% url 'payment_followup_form' %}" class="nav-link">
                      <i class="nav-icon fas fa-money-check-alt"></i>

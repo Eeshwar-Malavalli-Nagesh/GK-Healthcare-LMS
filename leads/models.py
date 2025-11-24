@@ -649,3 +649,49 @@ class QuotationItem(models.Model):
     
     def __str__(self):
         return f"{self.item_name} - {self.quotation.quotation_number}"
+    
+
+class Staff(models.Model):
+    name = models.CharField(max_length=100)
+    date_of_birth = models.DateField()
+    email = models.EmailField(unique=True)
+    phone_number = models.CharField(max_length=15)
+    emergency_contact = models.CharField(max_length=15)
+    pf_number = models.CharField(max_length=50, blank=True, null=True)
+    bank_name = models.CharField(max_length=100, blank=True, null=True)
+    bank_account_number = models.CharField(max_length=50, blank=True, null=True)
+    ifsc_code = models.CharField(max_length=20, blank=True, null=True)
+    pan_number = models.CharField(max_length=20, blank=True, null=True)
+    mother_name = models.CharField(max_length=100, blank=True, null=True)
+    father_name = models.CharField(max_length=100, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    aadhar_number = models.CharField(max_length=20, blank=True, null=True)
+    upload_photo = models.ImageField(upload_to='staff_photos/', blank=True, null=True)
+    
+    def __str__(self):
+        return self.name
+    
+
+TASK_TYPES = [
+    ("quotation_submitted", "Quotation Submitted"),
+    ("payment_follow_up", "Payment follow up"),
+    ("scrap_machine", "Scrap Machine"),
+    ("ncp_solution", "NCP_Solution"),
+    ("ncp_machine", "NCP_Machine"),
+    ("fmc_amc", "FMC_AMC"),
+    ("phone_call", "Phone Call"),
+    ("pts_visit", "PTS_Visit"),
+    ("citro_clear", "Citro Clear"),
+    ("pulmonary", "Pulmonary"),
+]
+
+class TaskAssign(models.Model):
+    assign_date = models.DateField()
+    hospital_id = models.ForeignKey("HospitalLead", on_delete=models.CASCADE, related_name='task_assign')
+    staff_id = models.ForeignKey("Staff", on_delete=models.CASCADE, related_name='task_assign')
+    task_type = models.CharField(max_length=100,choices=TASK_TYPES)
+    description = models.TextField()
+    remarks = models.TextField()
+    follow_up_date = models.DateField()
+
+    

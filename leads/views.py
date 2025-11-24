@@ -2063,3 +2063,129 @@ def delete_expense(request, expense_id):
             messages.error(request, f'Error deleting expense: {str(e)}')
     
     return redirect('project_detail', project_id=project_id)
+
+
+from .models import *
+
+@login_required
+def add_staff(request):
+    """Add new employee (general, not linked to customer/vendor)"""
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        date_of_birth = request.POST.get('dob')
+        email = request.POST.get('email')
+        phone_number = request.POST.get('phone_number')
+        emergency_contact = request.POST.get('emergency_contact')
+        pf_number = request.POST.get('pf_number')
+        bank_name = request.POST.get('bank_name')
+        bank_account_number = request.POST.get('bank_account_number')
+        ifsc_code = request.POST.get('ifsc_code')
+        pan_number = request.POST.get('pan_number')
+        mother_name = request.POST.get('mother_name')
+        father_name = request.POST.get('father_name')
+        address = request.POST.get('address')
+        aadhar_number = request.POST.get('aadhar_number')
+        upload_photo = request.FILES.get('upload_photo')
+
+        Staff.objects.create(
+            name=name,
+            date_of_birth=date_of_birth,
+            email=email,
+            phone_number=phone_number,
+            emergency_contact=emergency_contact,
+            pf_number=pf_number,
+            bank_name=bank_name,
+            bank_account_number=bank_account_number,
+            ifsc_code=ifsc_code,
+            pan_number=pan_number,
+            mother_name=mother_name,
+            father_name=father_name,
+            address=address,
+            aadhar_number=aadhar_number,
+            upload_photo=upload_photo
+        )
+
+
+        return render('add_staff.html', {'success': f'Staff successfully added!'})  # Redirect to appropriate page
+
+    return render(request, 'add_staff.html')
+
+@login_required
+def assign_task(request):
+    """Assign task to employee"""
+
+    if request.method == 'POST':
+        assign_date = request.POST.get('assign_date')
+        hospital_id = request.POST.get('hospital_id')
+        staff_id = request.POST.get('staff_id')
+        task_type = request.POST.get('task_type')
+        description = request.POST.get('description')
+        remarks = request.POST.get('remarks')
+        follow_up_date = request.POST.get('follow_up_date')
+
+        TaskAssign.objects.create(
+            assign_date = assign_date,
+            hospital_id = HospitalLead.objects.get(id=hospital_id),
+            staff_id = Staff.objects.get(id=staff_id),
+            task_type = task_type,
+            description = description,
+            remarks = remarks,
+            follow_up_date = follow_up_date
+        )
+    
+        hospitals = HospitalLead.objects.all()
+        staff = Staff.objects.all()
+
+        return render(request, 'assign_task.html', {'success_message': f'Task assigned successfully!','staff': staff, 'hospitals': hospitals})
+
+      
+    hospitals = HospitalLead.objects.all()
+    staff = Staff.objects.all()
+
+    return render(request, 'assign_task.html', {'staff': staff, 'hospitals': hospitals})
+
+
+@login_required
+def manage_task(request):
+
+    hospitals = HospitalLead.objects.all()
+    staff = Staff.objects.all()
+    tasks = TaskAssign.objects.all()
+
+    return render(request, 'manage-task.html', {'staff': staff, 'hospitals': hospitals, 'tasks' : tasks})
+
+
+@login_required
+def view_task(request, task_id):
+    
+    task = TaskAssign.objects.get(id = task_id)
+    print(task.assign_date)
+    return render(request, 'view-task.html', {'task' : task})
+
+
+@login_required
+def filter_task(request, search_type):
+
+    if request.method == 'POST':
+        query = request.POST.get('task_type')
+
+        print(query)
+
+        if search_type == 'task_type':
+            tasks = TaskAssign.objects.filter(Q(task_type__icontains=query))
+            staff = Staff.objects.all()
+            hospitals = HospitalLead.objects.all()
+
+        if search_type == 'hospital_name':
+            tasks = TaskAssign.objects.filter(hospital_id=query)
+            staff = Staff.objects.all()
+            hospitals = HospitalLead.objects.all()
+        
+        return render(request, 'manage-task.html', {'staff': staff, 'hospitals': hospitals, 'tasks' : tasks})
+
+
+    hospitals = HospitalLead.objects.all()
+    staff = Staff.objects.all()
+    tasks = TaskAssign.objects.all()
+
+    return render(request, 'manage-task.html', {'staff': staff, 'hospitals': hospitals, 'tasks' : tasks})

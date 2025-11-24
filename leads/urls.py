@@ -117,5 +117,11 @@ urlpatterns = [
     # View reports
     path('view-reports/', views.view_report, name='view_report'),
     
+    # Add Employee
+    path('add-staff/', views.add_staff, name='add_staff'),
+    path('assign-task/', views.assign_task, name='assign_task'),
+    path('manage-task/', views.manage_task, name='manage_task'),
+    path('view-task/<int:task_id>/', views.view_task, name='view_task'),
+    path('filter-task/<str:search_type>/', views.filter_task, name='filter_task')
 
 ]

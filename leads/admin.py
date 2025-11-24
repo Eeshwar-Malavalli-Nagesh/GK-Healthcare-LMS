@@ -38,3 +38,17 @@ class TaxTypeAdmin(admin.ModelAdmin):
     def formatted_percentage(self, obj):
         return f"{obj.percentage}%"
     formatted_percentage.short_description = 'Tax Rate'
+
+from .models import *
+
+@admin.register(Staff)
+class StaffAdmin(admin.ModelAdmin):
+    list_display = ['name', 'date_of_birth', 'email', 'phone_number', 'emergency_contact', 'pf_number', 
+                    'bank_name', 'bank_account_number', 'ifsc_code', 'pan_number', 'mother_name', 
+                    'father_name', 'address', 'aadhar_number', 'upload_photo']
+
+@admin.register(TaskAssign) 
+class TaskAssignAdmin(admin.ModelAdmin):
+    list_display = ['assign_date', 'hospital_id', 'staff_id', 'task_type', 'description', 'remarks', 'follow_up_date']
+
+
