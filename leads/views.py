@@ -2144,13 +2144,28 @@ def assign_task(request):
 
     return render(request, 'assign_task.html', {'staff': staff, 'hospitals': hospitals})
 
+import urllib.parse
 
 @login_required
 def manage_task(request):
 
-    hospitals = HospitalLead.objects.all()
-    staff = Staff.objects.all()
-    tasks = TaskAssign.objects.all()
+    query = request.GET.get('q', '')            # query = hospital_name 1 - srm - chennai
+    query_url =  urllib.parse.quote(query)      # query_url = 'hospital_name%201%20-%20srm%20-%20chennai'
+    filter_type = query_url.split('%20')[0]     # filter_type = [hospital_name, 1, -, srm, -, chennai]
+    
+    if filter_type == 'hospital_name':
+        tasks = TaskAssign.objects.filter(hospital_id=query_url.split('%20')[1])
+        staff = Staff.objects.all()
+        hospitals = HospitalLead.objects.all()
+    if filter_type == 'task_type':
+        print(query_url)
+        tasks = TaskAssign.objects.filter(task_type = query_url.split('%20',1)[1])
+        staff = Staff.objects.all()
+        hospitals = HospitalLead.objects.all()
+    else:
+        hospitals = HospitalLead.objects.all()
+        staff = Staff.objects.all()
+        tasks = TaskAssign.objects.all()
 
     return render(request, 'manage-task.html', {'staff': staff, 'hospitals': hospitals, 'tasks' : tasks})
 

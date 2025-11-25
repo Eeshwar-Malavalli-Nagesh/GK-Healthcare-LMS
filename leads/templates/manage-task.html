@@ -24,23 +24,25 @@
         <!-- Collapsible Search Section -->
         <div class="collapse" id="searchSection">
             <div class="card-body bg-light border-bottom">
-                <form method="post" action="/filter-task/hospital_name/">
+                <form method="get" action="{% url 'manage_task' %}">
                     {% csrf_token %}
                     <div class="row g-2"> 
-                        <div class="col-2">
+                        <div class="col-sm-2">
                             <div class="d-flex align-content-center">
                                 Hospital Name
                             </div>
                         </div>
-                        <div class="col-7">
-                            <select type="text" name="task_type" class="form-control" placeholder="Enter Hospital ID" required >
+                        <div class="col-sm-7">
+                            <input style="display: none;" type="text" name="q" id="hiddenQ" value="hospital_name-{{ hospital.id }}"/>
+                            <select type="text" name="task_type" class="form-control" placeholder="Enter Hospital ID" 
+                            onchange="document.getElementById('hiddenQ').value = 'hospital_name '+this.options[this.selectedIndex].text;" required >
                                 <option value="">Select Hospital ID</option>
                                     {% for hospital in hospitals %}
                                         <option value="{{ hospital.id }}">{{ hospital.id }} - {{ hospital.hospital_name }} - {{ hospital.city }}</option>
                                     {% endfor %}
                             </select>
                         </div>
-                        <div class="col-3">
+                        <div class="col-sm-3">
                             <div class="d-flex gap-1">
                                 <button class="btn btn-primary btn-sm">
                                     <i class="fas fa-search"></i>
@@ -52,30 +54,32 @@
 
                 <br>
 
-                <form method="post" action="/filter-task/task_type/">
+                <form method="get" action="{% url 'manage_task' %}">
                     {% csrf_token %}
                     <div class="row g-2"> 
-                        <div class="col-2">
+                        <div class="col-sm-2">
                             <div class="d-flex align-content-center" name = 'task_type'>
                                 Task Type
                             </div>
                         </div>
-                        <div class="col-7">
-                            <select name="task_type" class="form-control" required>
+                        <div class="col-sm-7 ">
+                            <input style="display: none;" type="text" name="q" id="hiddenQ2" value="task_type {{ hospital.id }}"/>
+                            <select name="task_type" class="form-control" required
+                            onchange="document.getElementById('hiddenQ2').value = 'task_type '+this.value;" >
                                 <option value="">Select Task</option>
                                 <option value="quotation_submitted">Quotation Submitted</option>
                                 <option value="payment_follow_up">Payment follow up</option>
                                 <option value="scrap_machine">Scrap Machine</option>
-                                <option value="ncp_solution">NCP_Solution</option>
-                                <option value="ncp_machine">NCP_Machine</option>
-                                <option value="fmc_amc">FMC_AMC</option>
+                                <option value="ncp_solution">NCP Solution</option>
+                                <option value="ncp_machine">NCP Machine</option>
+                                <option value="fmc_amc">FMC AMC</option>
                                 <option value="phone_call">Phone Call</option>
-                                <option value="pts_visit">PTS_Visit</option>
+                                <option value="pts_visit">PTS Visit</option>
                                 <option value="citro_clear">Citro Clear</option>
                                 <option value="pulmonary">Pulmonary</option>
                             </select>
                         </div>
-                        <div class="col-3">
+                        <div class="col-sm-3 ">
                             <div class="d-flex gap-1">
                                 <button type="submit" class="btn btn-primary btn-sm">
                                     <i class="fas fa-search"></i>
@@ -91,7 +95,7 @@
         <div class="card-body p-0">
             {% if tasks %}
                 <!-- Desktop Table View -->
-                <div class="table-responsive d-none d-lg-block">
+                <div class="table-responsive d-none d-md-block ">
                     <table class="table table-hover mb-0">
                         <thead class="bg-light">
                             <tr>
@@ -149,144 +153,101 @@
                 </div>
 
                 <!-- Mobile Card View with Dropdown -->
-                <div class="d-lg-none">
-                    {% for lead in leads %}
-                        <div class="lead-card border-bottom">
-                            <div class="lead-header d-flex align-items-center justify-content-between p-3" 
-                                 data-bs-toggle="collapse" data-bs-target="#lead-{{ lead.id }}" 
+                <div class="d-md-none d-sm-block">
+                    {% for task in tasks %}
+                        <div class="task-card border-bottom">
+                            <div class="task-header d-flex align-items-center justify-content-between p-3" 
+                                 data-bs-toggle="collapse" data-bs-target="#task-{{ task.id }}" 
                                  aria-expanded="false" style="cursor: pointer;">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-circle me-3">
-                                        {{ lead.hospital_name|first|upper }}
+                                    <div class="avatar-circle me-3 ">
+                                        {{ task.hospital_id|stringformat:"s"|slice:":1"|upper }} 
                                     </div>
                                     <div>
-                                        <h6 class="mb-0">{{ lead.hospital_name }}</h6>
-                                        <small class="text-muted">{{ lead.first_name }} {{ lead.last_name }}</small>
+                                        <h6 class="mb-0">{{ task.hospital_id|stringformat:"s"|slice:":31" }} ...</h6>
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center">
-                                    <span class="badge bg-info text-dark me-2">{{ lead.hospital_type }}</span>
+                                    <span class="badge bg-info text-dark me-2">{{ task.task_type }}</span>
                                     <i class="fas fa-chevron-down toggle-icon"></i>
                                 </div>
                             </div>
                             
-                            <div class="collapse" id="lead-{{ lead.id }}">
-                                <div class="lead-details p-3 pt-0">
+                            <div class="collapse" id="task-{{ task.id }}">
+                                <div class="task-details p-3 pt-0">
                                     <div class="row g-2">
+                                        <br>
+
                                         <div class="col-12">
                                             <div class="detail-item d-flex align-items-center mb-2">
                                                 <i class="fas fa-hospital text-primary me-2"></i>
-                                                <small class="text-muted me-2">Hospital:</small>
-                                                <span class="fw-bold">{{ lead.hospital_name }}</span>
+                                                <small class="fw-bold me-2">Hospital:</small>
+                                                <span class="text-muted">{{ task.hospital_id }} -  {{ task.hospital_id.city|default:"" }}</span>
                                             </div>
                                         </div>
                                         
                                         <div class="col-12">
                                             <div class="detail-item d-flex align-items-center mb-2">
                                                 <i class="fas fa-user text-primary me-2"></i>
-                                                <small class="text-muted me-2">Contact:</small>
-                                                <span>{{ lead.first_name }} {{ lead.last_name }}</span>
+                                                <small class="fw-bold me-2">Staff Name:</small>
+                                                <span class="text-muted me-2">{{ task.staff_id }}</span>
                                             </div>
                                         </div>
-                                        
-                                        {% if lead.email %}
+
                                         <div class="col-12">
                                             <div class="detail-item d-flex align-items-center mb-2">
-                                                <i class="fas fa-envelope text-primary me-2"></i>
-                                                <small class="text-muted me-2">Email:</small>
-                                                <span>{{ lead.email }}</span>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                        
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-center mb-2">
-                                                <i class="fas fa-phone text-primary me-2"></i>
-                                                <small class="text-muted me-2">Phone:</small>
-                                                <span>{{ lead.phone }}</span>
+                                                <i class="fas fa-tasks text-primary me-2"></i>
+                                                <small class="fw-bold me-2">Task Type:</small>
+                                                <span class="badge bg-info text-dark me-2">{{ task.task_type }}</span>
                                             </div>
                                         </div>
                                         
                                         <div class="col-12">
                                             <div class="detail-item d-flex align-items-center mb-2">
-                                                <i class="fas fa-building text-primary me-2"></i>
-                                                <small class="text-muted me-2">Type:</small>
-                                                <span class="badge bg-info text-dark">{{ lead.hospital_type }}</span>
+                                                <i class="fas fa-align-left text-primary me-2"></i>
+                                                <small class="fw-bold me-2">Description:</small>
+                                                <span class="text-muted">{{ task.description  }}</span>
                                             </div>
                                         </div>
-                                        
-                                        {% if lead.city or lead.state %}
+
+                                         <div class="col-12">
+                                            <div class="detail-item d-flex align-items-center mb-2">
+                                                <i class="fas fa-comment-dots text-primary me-2"></i>
+                                                <small class="fw-bold me-2">Remarks:</small>
+                                                <span class="text-muted">{{ task.remarks  }}</span>
+                                            </div>
+                                        </div>
+
                                         <div class="col-12">
                                             <div class="detail-item d-flex align-items-center mb-2">
-                                                <i class="fas fa-map-marker-alt text-primary me-2"></i>
-                                                <small class="text-muted me-2">Location:</small>
-                                                <span>{{ lead.city|default:"" }}{% if lead.city and lead.state %}, {% endif %}{{ lead.state|default:"" }}</span>
+                                                <i class="fas fa-calendar-check text-primary me-2"></i>
+                                                <small class="fw-bold me-2">Assign Date:</small>
+                                                <span class="text-muted me-2">{{ task.assign_date }}</span>
                                             </div>
                                         </div>
-                                        {% endif %}
-                                        
-                                        {% if lead.lead_products.all %}
+
                                         <div class="col-12">
-                                            <div class="detail-item d-flex align-items-start mb-2">
-                                                <i class="fas fa-box text-primary me-2 mt-1"></i>
-                                                <div>
-                                                    <small class="text-muted me-2">Products:</small>
-                                                    <div class="mt-1">
-                                                        {% for lead_product in lead.lead_products.all %}
-                                                            <span class="badge bg-success me-1 mb-1">{{ lead_product.product.name }}</span>
-                                                        {% endfor %}
-                                                    </div>
-                                                </div>
+                                            <div class="detail-item d-flex align-items-center mb-2">
+                                                <i class="fas fa-calendar-day text-primary me-2"></i>
+                                                <small class="fw-bold me-2">Follow up Date:</small>
+                                                <span class="text-muted me-2">{{ task.follow_up_date }}</span>
                                             </div>
                                         </div>
-                                        {% endif %}
                                         
-                                        {% if lead.lead_parts.all %}
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-start mb-2">
-                                                <i class="fas fa-cog text-primary me-2 mt-1"></i>
-                                                <div>
-                                                    <small class="text-muted me-2">Parts:</small>
-                                                    <div class="mt-1">
-                                                        {% for lead_part in lead.lead_parts.all %}
-                                                            <span class="badge bg-warning text-dark me-1 mb-1">{{ lead_part.part.name }}</span>
-                                                        {% endfor %}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                        
-                                        {% if lead.followup_date %}
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-start mb-2">
-                                                <i class="fas fa-calendar-alt text-primary me-2 mt-1"></i>
-                                                <div>
-                                                    <small class="text-muted me-2">Follow-up:</small>
-                                                    <div>
-                                                        <span>{{ lead.followup_date }}</span>
-                                                        {% if lead.followup_time %}
-                                                            <br><small class="text-muted">{{ lead.followup_time }}</small>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endif %}
                                     </div>
                                     
                                     <!-- Action Buttons -->
                                     <div class="d-flex gap-2 mt-3">
-                                        <a href="{% url 'hospital_lead_detail' lead.id %}" 
+                                        <a href="{% url 'view_task' task.id %}" 
                                            class="btn btn-info btn-sm flex-fill">
                                             <i class="fas fa-eye me-1"></i>View
                                         </a>
-                                        <a href="{% url 'hospital_lead_edit' lead.id %}" 
+                                        <a href="{% url 'hospital_lead_edit' task.id %}" 
                                            class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <button type="button" class="btn btn-outline-danger btn-sm" 
-                                                onclick="confirmDelete(`{{ lead.id }}`, '{{ lead.hospital_name }}')">
+                                                onclick="confirmDelete(`{{ task.id }}`+)">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -295,6 +256,9 @@
                         </div>
                     {% endfor %}
                 </div>
+
+
+
             {% else %}
                 <div class="p-4">
                     <div class="text-center text-muted">
@@ -312,62 +276,6 @@
         </div>
     </div>
 </div>
-<!-- 
- Statistics Cards 
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ leads|length }}</h4>
-                        <p class="mb-0">Total Leads</p>
-                    </div>
-                    <i class="fas fa-hospital fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ leads|length }}</h4>
-                        <p class="mb-0">This Month</p>
-                    </div>
-                    <i class="fas fa-chart-line fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{% for lead in leads %}{% if lead.followup_date %}1{% endif %}{% endfor %}</h4>
-                        <p class="mb-0">Follow-ups Due</p>
-                    </div>
-                    <i class="fas fa-calendar-check fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ leads|length }}</h4>
-                        <p class="mb-0">Active Leads</p>
-                    </div>
-                    <i class="fas fa-users fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> -->
 
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
@@ -544,5 +452,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<!-- For Search -->
+ <script>
+    const select = document.getElementById("hospitalSelect");
+    const hiddenQ = document.getElementById("hiddenQ");
+
+    select.addEventListener("change", function() {
+        const selected = select.options[select.selectedIndex];
+        const id = selected.value;
+        const name = selected.dataset.name;
+        const city = selected.dataset.city;
+
+        // You can choose what to send:
+        hiddenQ.value = `${name} ${city}`;
+        // OR: hiddenQ.value = `${name}-${id}`;
+        // OR: hiddenQ.value = `${name}, ${city}`;
+    });
 </script>
 {% endblock %}
