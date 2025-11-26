@@ -46,6 +46,8 @@
             width: var(--sidebar-width);
             background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
+            background: linear-gradient(180deg, #2563EB, #10B981); /* blue → green */
+            color: #fff;
             height: 100vh;
             position: fixed;
             transition: all 0.3s;
@@ -57,12 +59,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255);
         }
         
         .sidebar-brand h3 {
             margin-bottom: 0;
             font-weight: 600;
+            font-size: 25px;
         }
         
         .sidebar-nav {
@@ -84,7 +87,8 @@
         
         .nav-link:hover, .nav-link.active {
             color: white;
-            background-color: rgba(255, 255, 255, 0.1);
+            /* background-color: rgba(255, 255, 255, 0.1); */
+            background: linear-gradient(90deg, #F59E0B, #EF4444); /* amber → red */
             text-decoration: none;
         }
         
@@ -114,7 +118,7 @@
             width: calc(100% - var(--sidebar-width));
             left: var(--sidebar-width);
             z-index: 100;
-            
+            border-bottom: 3px solid #10B981;
         }
         
         .header-right {
@@ -150,6 +154,8 @@
             font-weight: 600;
             padding: 15px 20px;
             border-radius: 10px 10px 0 0 !important;
+            background: linear-gradient(90deg, #007bff, #00c9a7);
+            color: #fff;
         }
         
         /* Buttons */
@@ -325,6 +331,11 @@
         document.getElementById('sidebarToggle').addEventListener('click', function() {
             document.querySelector('.sidebar').classList.toggle('active');
         });
+
+        // Close sidebar when clicking on main-content
+        // document.querySelector('.main-content').addEventListener('click', function() {
+        //     document.querySelector('.sidebar').classList.remove('active');
+        // });
         
         // Initialize tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

@@ -2157,8 +2157,7 @@ def manage_task(request):
         tasks = TaskAssign.objects.filter(hospital_id=query_url.split('%20')[1])
         staff = Staff.objects.all()
         hospitals = HospitalLead.objects.all()
-    if filter_type == 'task_type':
-        print(query_url)
+    elif filter_type == 'task_type':
         tasks = TaskAssign.objects.filter(task_type = query_url.split('%20',1)[1])
         staff = Staff.objects.all()
         hospitals = HospitalLead.objects.all()
