@@ -2136,13 +2136,32 @@ def assign_task(request):
         hospitals = HospitalLead.objects.all()
         staff = Staff.objects.all()
 
-        return render(request, 'assign_task.html', {'success_message': f'Task assigned successfully!','staff': staff, 'hospitals': hospitals})
+        cities_list = HospitalLead.objects.values_list('city', flat=True) 
+        cities = sorted(set([city.strip().title() for city in cities_list if city != '']))
+        
+        states_list = HospitalLead.objects.values_list('state', flat=True) 
+        states = sorted(set([state.strip().title() for state in states_list if state != '']))
 
+        return render(request, 'assign_task.html', {'success_message': f'Task assigned successfully!',
+                                                    'staff': staff, 'hospitals': hospitals, 
+                                                    'cities': cities, 'states':states})
+
+
+    cities = set(HospitalLead.objects.values_list('city', flat=True))
+    # This returns all unique cities as a set (the cities will not be repeated more than once)
+    cities = [city.strip().title() for city in cities if city != '']
+    '''Return a list of non-empty cities (if city != '') with surrounding whitespace removed (.strip()).
+    title() - Capitalizes the first letter of every word.'''
+    cities = sorted(set(cities))   # Sort the cities in ascending order
+    
+    states_list = HospitalLead.objects.values_list('state', flat=True) 
+    states = sorted(set([state.strip().title() for state in states_list if state != '']))
       
     hospitals = HospitalLead.objects.all()
     staff = Staff.objects.all()
 
-    return render(request, 'assign_task.html', {'staff': staff, 'hospitals': hospitals})
+    return render(request, 'assign_task.html', {'staff': staff, 'hospitals': hospitals,
+                                                'cities': cities, 'states': states})
 
 import urllib.parse
 
@@ -2161,12 +2180,31 @@ def manage_task(request):
         tasks = TaskAssign.objects.filter(task_type = query_url.split('%20',1)[1])
         staff = Staff.objects.all()
         hospitals = HospitalLead.objects.all()
+    elif filter_type == 'city':
+        tasks = TaskAssign.objects.filter(hospital_id__city=query_url.split('%20')[1])  # foreignkeyfield__fieldname
+        staff = Staff.objects.all()
+        hospitals = HospitalLead.objects.all()
+    elif filter_type == 'state':
+        tasks = TaskAssign.objects.filter(hospital_id__state=query_url.split('%20')[1]) 
+        staff = Staff.objects.all()
+        hospitals = HospitalLead.objects.all()
     else:
         hospitals = HospitalLead.objects.all()
         staff = Staff.objects.all()
         tasks = TaskAssign.objects.all()
 
-    return render(request, 'manage-task.html', {'staff': staff, 'hospitals': hospitals, 'tasks' : tasks})
+    cities = set(HospitalLead.objects.values_list('city', flat=True))
+    # This returns all unique cities as a set (the cities will not be repeated more than once)
+    cities = [city.strip().title() for city in cities if city != '']
+    '''Return a list of non-empty cities (if city != '') with surrounding whitespace removed (.strip()).
+    title() - Capitalizes the first letter of every word.'''
+    cities = sorted(set(cities))   # Sort the cities in ascending order
+    
+    states_list = HospitalLead.objects.values_list('state', flat=True) 
+    states = sorted(set([state.strip().title() for state in states_list if state != '']))
+
+    return render(request, 'manage-task.html', {'staff': staff, 'hospitals': hospitals, 'tasks' : tasks, 
+                                                'cities' : cities, 'states' :states})
 
 
 @login_required
@@ -2176,30 +2214,3 @@ def view_task(request, task_id):
     print(task.assign_date)
     return render(request, 'view-task.html', {'task' : task})
 
-
-@login_required
-def filter_task(request, search_type):
-
-    if request.method == 'POST':
-        query = request.POST.get('task_type')
-
-        print(query)
-
-        if search_type == 'task_type':
-            tasks = TaskAssign.objects.filter(Q(task_type__icontains=query))
-            staff = Staff.objects.all()
-            hospitals = HospitalLead.objects.all()
-
-        if search_type == 'hospital_name':
-            tasks = TaskAssign.objects.filter(hospital_id=query)
-            staff = Staff.objects.all()
-            hospitals = HospitalLead.objects.all()
-        
-        return render(request, 'manage-task.html', {'staff': staff, 'hospitals': hospitals, 'tasks' : tasks})
-
-
-    hospitals = HospitalLead.objects.all()
-    staff = Staff.objects.all()
-    tasks = TaskAssign.objects.all()
-
-    return render(request, 'manage-task.html', {'staff': staff, 'hospitals': hospitals, 'tasks' : tasks})

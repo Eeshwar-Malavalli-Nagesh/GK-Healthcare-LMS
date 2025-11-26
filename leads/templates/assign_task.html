@@ -74,8 +74,8 @@
                       <label class="form-label">City (search)</label>
                         <select name="city" class="form-control">
                           <option value="">Select City</option>
-                          {% for hospital in hospitals %}
-                              <option value="{{ hospital.city }}">{{ hospital.city }}</option>
+                          {% for city in cities %}
+                              <option value="{{ city }}">{{ city }}</option>
                           {% endfor %}
                         </select>
                     </div>
@@ -83,8 +83,8 @@
                       <label class="form-label">State (search)</label>
                         <select name="state" class="form-control">
                           <option value="">Select State</option>
-                          {% for hospital in hospitals %}
-                              <option value="{{ hospital.state }}">{{ hospital.state }}</option>
+                          {% for state in states %}
+                              <option value="{{ state }}">{{ state }}</option>
                           {% endfor %}
                         </select>
                     </div>
@@ -164,7 +164,7 @@
             hospitalSelect.innerHTML = '<option value="">Select Hospital ID</option>';
 
             {% for hospital in hospitals %}
-                if ("{{ hospital.city }}" === selectedCity || "{{ hospital.state }}" === selectedState) {
+                if ("{{ hospital.city|title }}" === selectedCity || "{{ hospital.state|title }}" === selectedState) {
                     const option = document.createElement('option');
                     option.value = "{{ hospital.id }}";
                     option.textContent = "{{ hospital.id }} - {{ hospital.hospital_name }}";

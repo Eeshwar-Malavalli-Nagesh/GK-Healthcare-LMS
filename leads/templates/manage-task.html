@@ -89,6 +89,70 @@
                     </div>
                 </form>
 
+                <br>
+
+                <form method="get" action="{% url 'manage_task' %}">
+                    {% csrf_token %}
+                    <div class="row g-2"> 
+                        <div class="col-sm-2">
+                            <div class="d-flex align-content-center" name = 'city'>
+                                City
+                            </div>
+                        </div>
+                        <div class="col-sm-7 ">
+                            <input style="display: none;" type="text" name="q" id="hiddenQ3" value="city {{ city }}"/>
+                            <select name="task_type" class="form-control" required
+                            onchange="document.getElementById('hiddenQ3').value = 'city '+this.value;" >
+                                <option value="">Select City</option>
+                                {% for city in cities %}
+                                    {% if city != '' %}
+                                    <option value="{{ city }}">{{ city }} </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-3 ">
+                            <div class="d-flex gap-1">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <br>
+
+                <form method="get" action="{% url 'manage_task' %}">
+                    {% csrf_token %}
+                    <div class="row g-2"> 
+                        <div class="col-sm-2">
+                            <div class="d-flex align-content-center" name = 'state'>
+                                State
+                            </div>
+                        </div>
+                        <div class="col-sm-7 ">
+                            <input style="display: none;" type="text" name="q" id="hiddenQ4" value="state {{ state }}"/>
+                            <select name="state" class="form-control" required
+                            onchange="document.getElementById('hiddenQ4').value = 'state '+this.value;" >
+                                <option value="">Select State</option>
+                                {% for state in states %}
+                                    {% if state != '' %}
+                                    <option value="{{ state }}">{{ state }} </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-3 ">
+                            <div class="d-flex gap-1">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
             </div>
         </div>
 
