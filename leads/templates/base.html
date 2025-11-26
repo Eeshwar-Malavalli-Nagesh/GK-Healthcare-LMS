@@ -74,6 +74,7 @@
         
         .nav-item {
             margin-bottom: 5px;
+            width: var(--sidebar-width) - 50;
         }
         
         .nav-link {
@@ -217,7 +218,7 @@
         <div class="sidebar-nav">
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'dashboard' %}">
                         <i class="fas fa-tachometer-alt"></i>
                         <span>Dashboard</span>
                     </a>

@@ -66,20 +66,21 @@ def login_view(request):
         else:
             return render(request, 'login.html', {'error': 'Invalid credentials'})
     return render(request, 'login.html')
-@login_required
+
+ 
 def logout_view(request):
     logout(request)
     return redirect('login')
 
-@login_required
+
 def dashboard(request):
     return render(request, 'dashboard.html')
-@login_required
+
 def payment(request):
     return render(request, 'payment.html')
 
 
-# @login_required
+#  
 # def new_lead1(request):
 #     if request.method == 'POST':
 #         try:
@@ -218,7 +219,7 @@ from django.contrib.auth.decorators import login_required
 from .models import HospitalLead, HospitalLeadParts, HospitalLeadProducts, Category, Product, Parts
 import json
 
-@login_required
+
 def new_lead(request):
     if request.method == 'POST':
         try:
@@ -357,7 +358,6 @@ def get_form_context():
     return context
 
 
-@login_required
 def hospital_leads_list(request):
     search_query = request.GET.get('q', '').strip()
     
@@ -382,7 +382,7 @@ def hospital_leads_list(request):
         'search_query': search_query
     })
 
-@login_required
+
 def hospital_lead_detail(request, lead_id):
     """View to display detailed information about a specific lead"""
     lead = get_object_or_404(HospitalLead, id=lead_id)
@@ -396,7 +396,7 @@ def hospital_lead_detail(request, lead_id):
     }
     return render(request, 'hospital_lead_detail.html', context)
     
-@login_required
+
 def hospital_lead_edit(request, pk):
     lead = get_object_or_404(HospitalLead, pk=pk)
     
@@ -910,13 +910,11 @@ def delete_parts(request, parts_id):
     # For GET request, show parts list
     return redirect('parts_list')
 
-@login_required
 def add_customer(request):
     """Display the add customer form"""
     return render(request, 'add_customer.html')
 
 
-@login_required
 def save_customer(request):
     """Save customer data to database"""
     if request.method == 'POST':
@@ -947,51 +945,54 @@ def save_customer(request):
     return redirect('add_customer')
 
 
-@login_required
 def customer_list(request):
     """Display list of all customers with search and filter functionality"""
     customers = Customer.objects.all()
 
-    # Search
-    search_query = request.GET.get('search', '')
-    if search_query:
-        customers = customers.filter(
-            Q(customer_id__icontains=search_query) |
-            Q(customer_name__icontains=search_query) |
-            Q(company_name__icontains=search_query) |
-            Q(phone_number__icontains=search_query) |
-            Q(email__icontains=search_query) |
-            Q(city__icontains=search_query)
-        )
+    query = request.GET.get('q', '')            # query = hospital_name 1 - srm - chennai
+    query_url =  urllib.parse.quote(query)      # query_url = 'hospital_name%201%20-%20srm%20-%20chennai'
+    filter_type = query_url.split('%20')[0]     # filter_type = [hospital_name, 1, -, srm, -, chennai]
+    
+    if filter_type == 'hospital_name':
+        hospitals = HospitalLead.objects.filter(id=query_url.split('%20')[1])
+        hospital_leads = HospitalLead.objects.filter(id=query_url.split('%20')[1])
+    elif filter_type == 'city':
+        hospitals = HospitalLead.objects.filter(city=query_url.split('%20')[1])
+        hospital_leads = HospitalLead.objects.filter(city=query_url.split('%20')[1])
+    elif filter_type == 'state':
+        hospitals = HospitalLead.objects.filter(state=query_url.split('%20')[1])
+        hospital_leads = HospitalLead.objects.filter(state=query_url.split('%20')[1])
+    else:
+        hospital_leads = HospitalLead.objects.all().order_by('-created_at')
+        hospitals = HospitalLead.objects.all()
 
-    # Filters
-    state_filter = request.GET.get('state', '')
-    if state_filter:
-        customers = customers.filter(state__icontains=state_filter)
-
-    city_filter = request.GET.get('city', '')
-    if city_filter:
-        customers = customers.filter(city__icontains=city_filter)
-
-    states = Customer.objects.exclude(state__isnull=True).exclude(state='').values_list('state', flat=True).distinct().order_by('state')
-    cities = Customer.objects.exclude(city__isnull=True).exclude(city='').values_list('city', flat=True).distinct().order_by('city')
-
+    
+    cities = set(HospitalLead.objects.values_list('city', flat=True))
+    # This returns all unique cities as a set (the cities will not be repeated more than once)
+    cities = [city.strip().title() for city in cities if city != '']
+    '''Return a list of non-empty cities (if city != '') with surrounding whitespace removed (.strip()).
+    title() - Capitalizes the first letter of every word.'''
+    cities = sorted(set(cities))   # Sort the cities in ascending order
+    
+    states_list = HospitalLead.objects.values_list('state', flat=True) 
+    states = sorted(set([state.strip().title() for state in states_list if state != '']))
+    
+    # Pagination
     paginator = Paginator(customers, 5)
     page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(page_number) 
 
-    return render(request, 'customer_list.html', {
+    # RETURN ALL DATA TO TEMPLATE
+    return render(request, 'customer_list_1.html', {
         'customers': page_obj,
-        'search_query': search_query,
-        'state_filter': state_filter,
-        'city_filter': city_filter,
         'states': states,
         'cities': cities,
         'total_customers': Customer.objects.count(),
+        'hospital_leads': hospital_leads,     # ✅ NOW AVAILABLE IN TEMPLATE
+        'hospitals':hospitals,
     })
 
 
-@login_required
 def customer_detail(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
     employees = customer.employees.all()  # Uses related_name='employees' from Employee model
@@ -1004,7 +1005,6 @@ def customer_detail(request, customer_id):
     })
 
 
-@login_required
 def edit_customer(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
 
@@ -1034,7 +1034,6 @@ def edit_customer(request, customer_id):
     return render(request, 'edit_customer.html', {'customer': customer})
 
 
-@login_required
 def delete_customer(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
 
@@ -1222,12 +1221,10 @@ def delete_customer_product(request, product_id):
 from .models import Vendor, VendorEmployee, VendorProduct
 
 # Vendor Views
-@login_required
 def add_vendor(request):
     """Display the add vendor form"""
     return render(request, 'add_vendor.html')
 
-@login_required
 def save_vendor(request):
     """Save vendor data to database"""
     if request.method == 'POST':
@@ -1257,7 +1254,6 @@ def save_vendor(request):
 
     return redirect('add_vendor')
 
-@login_required
 def vendor_list(request):
     """Display list of all vendors with search and filter functionality"""
     vendors = Vendor.objects.all()
@@ -1300,7 +1296,7 @@ def vendor_list(request):
         'total_vendors': Vendor.objects.count(),
     })
 
-@login_required
+
 def vendor_detail(request, vendor_id):
     vendor = get_object_or_404(Vendor, id=vendor_id)
     employees = vendor.employees.all()
@@ -1312,7 +1308,6 @@ def vendor_detail(request, vendor_id):
         'vendor_products': vendor_products
     })
 
-@login_required
 def edit_vendor(request, vendor_id):
     vendor = get_object_or_404(Vendor, id=vendor_id)
 
@@ -1341,7 +1336,7 @@ def edit_vendor(request, vendor_id):
 
     return render(request, 'edit_vendor.html', {'vendor': vendor})
 
-@login_required
+
 def delete_vendor(request, vendor_id):
     vendor = get_object_or_404(Vendor, id=vendor_id)
 
@@ -1525,13 +1520,11 @@ def delete_vendor_product(request, product_id):
     messages.success(request, f'Product "{product_name}" deleted successfully!')
     return redirect('vendor_detail', vendor_id=vendor_id)
 
-#
-@login_required
+
 def generate_report(request):
     """Main reports dashboard view"""
     return render(request, 'generate_report.html')
 
-@login_required
 def installation_report(request):
     """Installation reports view"""
     # Add your installation report logic here
@@ -1541,7 +1534,7 @@ def installation_report(request):
     }
     return render(request, 'installation_report.html', context)
 
-@login_required
+
 def service_report(request):
     """Service reports view"""
     # Add your service report logic here
@@ -1551,7 +1544,7 @@ def service_report(request):
     }
     return render(request, 'service_report.html', context)
 
-@login_required
+
 def inspection_report(request):
     """Inspection reports view"""
     # Add your inspection report logic here
@@ -1561,7 +1554,7 @@ def inspection_report(request):
     }
     return render(request, 'inspection_report.html', context)
 
-@login_required
+ 
 def incident_report(request):
     """Incident reports view"""
     # Add your incident report logic here
@@ -1572,7 +1565,7 @@ def incident_report(request):
     return render(request, 'incident_report.html', context)
 
 
-@login_required
+ 
 def create_quotation(request):
     """Create a new quotation"""
     if request.method == 'POST':
@@ -1622,7 +1615,7 @@ def create_quotation(request):
     }
     return render(request, 'quotation_create.html', context)
 
-@login_required
+ 
 def quotation_detail(request, quotation_id):
     """View quotation details"""
     quotation = get_object_or_404(Quotation, id=quotation_id)
@@ -1635,7 +1628,7 @@ def quotation_detail(request, quotation_id):
     }
     return render(request, 'quotation_detail.html', context)
 
-@login_required
+ 
 def edit_quotation(request, quotation_id):
     """Edit existing quotation"""
     quotation = get_object_or_404(Quotation, id=quotation_id)
@@ -1665,7 +1658,7 @@ def edit_quotation(request, quotation_id):
     }
     return render(request, 'quotation_create.html', context)
 
-@login_required
+ 
 def quotation_list(request):
     """List all quotations with search and filter"""
     search_form = QuotationSearchForm(request.GET)
@@ -1702,7 +1695,7 @@ def quotation_list(request):
     }
     return render(request, 'quotation_list.html', context)
 
-@login_required
+ 
 def quotation_report(request):
     """Quotation reports view"""
     # Get filter parameters
@@ -1770,7 +1763,7 @@ def quotation_report(request):
     }
     return render(request, 'quotation_report.html', context)
 
-@login_required
+ 
 def delete_quotation(request, quotation_id):
     """Delete quotation"""
     quotation = get_object_or_404(Quotation, id=quotation_id)
@@ -1787,7 +1780,7 @@ def delete_quotation(request, quotation_id):
     }
     return render(request, 'quotation_delete.html', context)
 
-@login_required
+ 
 def ajax_calculate_totals(request):
     """AJAX endpoint to calculate totals"""
     if request.method == 'POST':
@@ -1816,7 +1809,7 @@ def ajax_calculate_totals(request):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
-@login_required
+ 
 def purchase_order_report(request):
     """Purchase order reports view"""
     # Add your purchase order report logic here
@@ -1826,7 +1819,7 @@ def purchase_order_report(request):
     }
     return render(request, 'purchase_order_report.html', context)
 
-@login_required
+ 
 def delivery_challan_report(request):
     """Delivery challan reports view"""
     # Add your delivery challan report logic here
@@ -1838,12 +1831,12 @@ def delivery_challan_report(request):
 
 #view_report
 
-@login_required
+ 
 def view_report(request):
     """Main reports dashboard view"""
     return render(request, 'view_reports.html')
 
-@login_required
+ 
 def expense_dashboard(request):
     """Main expense dashboard showing all projects"""
     try:
@@ -1882,7 +1875,7 @@ def expense_dashboard(request):
         messages.error(request, f'Error loading dashboard: {str(e)}')
         return render(request, 'expenses/expense_dashboard.html', {'projects': []})
 
-@login_required
+ 
 def add_project(request):
     if request.method == 'POST':
         form = ProjectForm(request.POST)
@@ -1902,7 +1895,7 @@ def add_project(request):
 
 
 
-@login_required
+ 
 def project_detail(request, project_id):
     """Project detail page showing expenses"""
     try:
@@ -1955,7 +1948,7 @@ def project_detail(request, project_id):
         return redirect('expense_dashboard')
 
 
-@login_required
+ 
 def add_expense(request, project_id):
     """Add expense to a project"""
     project = get_object_or_404(Project, id=project_id, created_by=request.user)
@@ -2010,7 +2003,7 @@ def delete_project(request, project_id):
     return redirect('dashboard')  # or wherever you want to redirect
 
 
-@login_required
+ 
 def edit_expense(request, expense_id):
     """Edit an expense"""
     expense = get_object_or_404(Expense, id=expense_id, created_by=request.user)
@@ -2037,7 +2030,7 @@ def edit_expense(request, expense_id):
     return render(request, 'expenses/edit_expense.html', context)
 
 
-@login_required
+ 
 def view_expense(request, expense_id):
     """View expense details"""
     expense = get_object_or_404(Expense, id=expense_id, created_by=request.user)
@@ -2049,7 +2042,7 @@ def view_expense(request, expense_id):
     return render(request, 'expenses/view_expense.html', context)
 
 
-@login_required
+ 
 def delete_expense(request, expense_id):
     """Delete an expense"""
     expense = get_object_or_404(Expense, id=expense_id, created_by=request.user)
@@ -2067,7 +2060,7 @@ def delete_expense(request, expense_id):
 
 from .models import *
 
-@login_required
+ 
 def add_staff(request):
     """Add new employee (general, not linked to customer/vendor)"""
     if request.method == 'POST':
@@ -2110,7 +2103,7 @@ def add_staff(request):
 
     return render(request, 'add_staff.html')
 
-@login_required
+ 
 def assign_task(request):
     """Assign task to employee"""
 
@@ -2165,7 +2158,7 @@ def assign_task(request):
 
 import urllib.parse
 
-@login_required
+ 
 def manage_task(request):
 
     query = request.GET.get('q', '')            # query = hospital_name 1 - srm - chennai
@@ -2207,7 +2200,7 @@ def manage_task(request):
                                                 'cities' : cities, 'states' :states})
 
 
-@login_required
+ 
 def view_task(request, task_id):
     
     task = TaskAssign.objects.get(id = task_id)

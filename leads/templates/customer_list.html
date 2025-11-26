@@ -39,75 +39,24 @@
 {% endif %} -->
 
 <!-- Search and Filter Section -->
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3">
-            <!-- Mobile Search -->
-            <div class="col-12 d-md-none">
-                <label for="search-mobile" class="form-label">Search Customers</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control" id="search-mobile" name="search" 
-                           value="{{ search_query }}" placeholder="Search customers...">
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">
+                        <i class="fas fa-hospital me-2"></i>Tasks Assigned
+                    </h3>
+                    <span class="badge bg-light text-dark mt-1">Total: {{ tasks|length }}</span>
                 </div>
-            </div>
-            
-            <!-- Mobile Filters -->
-            <div class="col-6 d-md-none">
-                <label for="state-mobile" class="form-label">State</label>
-                <select class="form-select" id="state-mobile" name="state">
-                    <option value="">All States</option>
-                    {% for state in states %}
-                        <option value="{{ state }}" {% if state == state_filter %}selected{% endif %}>{{ state }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-6 d-md-none">
-                <label for="city-mobile" class="form-label">City</label>
-                <select class="form-select" id="city-mobile" name="city">
-                    <option value="">All Cities</option>
-                    {% for city in cities %}
-                        <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <!-- Desktop Search and Filters -->
-            <div class="col-md-4 d-none d-md-block">
-                <label for="search" class="form-label">Search Customers</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    <input type="text" class="form-control" id="search" name="search" 
-                           value="{{ search_query }}" placeholder="Search by name, company, phone...">
-                </div>
-            </div>
-            <div class="col-md-3 d-none d-md-block">
-                <label for="state" class="form-label">Filter by State</label>
-                <select class="form-select" id="state" name="state">
-                    <option value="">All States</option>
-                    {% for state in states %}
-                        <option value="{{ state }}" {% if state == state_filter %}selected{% endif %}>{{ state }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3 d-none d-md-block">
-                <label for="city" class="form-label">Filter by City</label>
-                <select class="form-select" id="city" name="city">
-                    <option value="">All Cities</option>
-                    {% for city in cities %}
-                        <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 col-md-2">
-                <label class="form-label d-none d-md-block">&nbsp;</label>
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-outline-primary">
-                        <i class="fas fa-filter me-1"></i>Filter
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light btn-sm" id="searchToggle" title="Search">
+                        <i class="fas fa-search"></i>
                     </button>
+                    
                 </div>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -124,8 +73,8 @@
                     <thead class="bg-light">
                         <tr>
                             <th>ID</th>
-                            <th>Customer</th>
-                            <th>Company</th>
+                            <th>Contact Person</th>
+                            <th>Hospital</th>
                             <th>Contact</th>
                             <th>Location</th>
                             <th>Created</th>
@@ -490,6 +439,67 @@
             });
         });
     });
+</script>
+
+<script>
+function confirmDelete(leadId, hospitalName) {
+    document.getElementById('hospitalName').textContent = hospitalName;
+    document.getElementById('deleteForm').action = '/leads/hospital/' + leadId + '/delete/';
+    var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+function clearSearch() {
+    window.location.href = window.location.pathname;
+}
+
+// Handle collapse events and search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle lead card collapse events
+    var collapseElements = document.querySelectorAll('.collapse[id^="lead-"]');
+    collapseElements.forEach(function(collapse) {
+        collapse.addEventListener('show.bs.collapse', function() {
+            var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
+            if (header) {
+                header.setAttribute('aria-expanded', 'true');
+            }
+        });
+        
+        collapse.addEventListener('hide.bs.collapse', function() {
+            var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
+            if (header) {
+                header.setAttribute('aria-expanded', 'false');
+            }
+        });
+    });
+
+    // Search toggle functionality
+    const searchToggle = document.getElementById('searchToggle');
+    const searchSection = document.getElementById('searchSection');
+    const searchInput = document.getElementById('searchInput');
+
+    if (searchToggle && searchSection) {
+        searchToggle.addEventListener('click', function() {
+            const bsCollapse = new bootstrap.Collapse(searchSection, {
+                toggle: true
+            });
+        });
+
+        // Focus input when search section is shown
+        searchSection.addEventListener('shown.bs.collapse', function() {
+            if (searchInput) {
+                searchInput.focus();
+            }
+        });
+    }
+
+    // Auto-expand search if there's a search query
+    if (searchInput && searchInput.value.trim() !== '' && searchSection) {
+        const bsCollapse = new bootstrap.Collapse(searchSection, {
+            show: true
+        });
+    }
+});
 </script>
 
 {% endblock %}

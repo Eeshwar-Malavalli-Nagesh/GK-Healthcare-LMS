@@ -535,4 +535,29 @@ document.addEventListener('DOMContentLoaded', function() {
         // OR: hiddenQ.value = `${name}, ${city}`;
     });
 </script>
+
+<!-- Delete Confirmation Script -->
+<script>
+    function confirmDelete(customerId, customerName) {
+        if (confirm(`Are you sure you want to delete customer: ${customerName}?`)) {
+            window.location.href = `/customers/delete/${customerId}/`;
+        }
+    }
+    
+    // Handle collapse events to rotate arrow
+    document.addEventListener('DOMContentLoaded', function() {
+        var collapseElements = document.querySelectorAll('.collapse');
+        collapseElements.forEach(function(collapse) {
+            collapse.addEventListener('show.bs.collapse', function() {
+                var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
+                header.setAttribute('aria-expanded', 'true');
+            });
+            
+            collapse.addEventListener('hide.bs.collapse', function() {
+                var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
+                header.setAttribute('aria-expanded', 'false');
+            });
+        });
+    });
+</script>
 {% endblock %}
