@@ -983,7 +983,7 @@ def customer_list(request):
     page_obj = paginator.get_page(page_number) 
 
     # RETURN ALL DATA TO TEMPLATE
-    return render(request, 'customer_list_1.html', {
+    return render(request, 'customer_list_2.html', {
         'customers': page_obj,
         'states': states,
         'cities': cities,
