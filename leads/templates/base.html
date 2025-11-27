@@ -236,6 +236,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/manage-staff/' %}active{% endif %}" href="{% url 'manage_staff' %}">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Manage Staff</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.path == '/assign-task/' %}active{% endif %}" href="{% url 'assign_task' %}">
                         <i class="fas fa-tasks"></i>
                         <span>Assign Task</span>

@@ -8,7 +8,7 @@
         <div>
             <h1 class="page-title">
                 <i class="fas fa-users me-2"></i>Customers
-                <span class="badge bg-primary ms-2">{{ total_customers }}</span>
+                
             </h1>
             <nav aria-label="breadcrumb" class="d-none d-md-block">
                 <ol class="breadcrumb">
@@ -17,13 +17,7 @@
                 </ol>
             </nav>
         </div>
-        <div>
-            <a href="{% url 'add_customer' %}" class="btn btn-primary">
-                <i class="fas fa-plus me-2 d-none d-sm-inline"></i>
-                <span class="d-none d-sm-inline">Add Customer</span>
-                <i class="fas fa-plus d-sm-none"></i>
-            </a>
-        </div>
+      
     </div>
 </div>
 
@@ -38,314 +32,220 @@
     {% endfor %}
 {% endif %} -->
 
-<!-- Search and Filter Section -->
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h3 class="mb-0">
-                        <i class="fas fa-hospital me-2"></i>Tasks Assigned
-                    </h3>
-                    <span class="badge bg-light text-dark mt-1">Total: {{ tasks|length }}</span>
-                </div>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-light btn-sm" id="searchToggle" title="Search">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    
-                </div>
-            </div>
+<div class="card">
+    <div class="card-body bg-light border-bottom">
+
+        <div class="row g-3 align-items-center">
+
+            <!-- Hospital -->
+            <form class="col-md-3 d-flex" method="get" action="{% url 'customer_list' %}">
+                {% csrf_token %}
+                <input type="hidden" name="q" id="hiddenHospitalRow">
+
+                <select class="form-control" name="hospital"
+                        onchange="document.getElementById('hiddenHospitalRow').value = 'hospital_name '+this.options[this.selectedIndex].text;"
+                        required>
+                    <option value="">Select Hospital ID</option>
+                    {% for hospital in hospitals %}
+                        <option value="{{ hospital.id }}">
+                            {{ hospital.id }} - {{ hospital.hospital_name }} - {{ hospital.city }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <button class="btn btn-primary ms-2">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+
+            <!-- City -->
+            <form class="col-md-3 d-flex" method="get" action="{% url 'customer_list' %}">
+                {% csrf_token %}
+                <input type="hidden" name="q" id="hiddenCityRow">
+
+                <select class="form-control" name="city"
+                        onchange="document.getElementById('hiddenCityRow').value = 'city '+this.value;"
+                        required>
+                    <option value="">Select City</option>
+                    {% for city in cities %}
+                        {% if city %}
+                            <option value="{{ city }}">{{ city }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+
+                <button class="btn btn-primary ms-2">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+
+            <!-- State -->
+            <form class="col-md-3 d-flex" method="get" action="{% url 'customer_list' %}">
+                {% csrf_token %}
+                <input type="hidden" name="q" id="hiddenStateRow">
+
+                <select class="form-control" name="state"
+                        onchange="document.getElementById('hiddenStateRow').value = 'state '+this.value;"
+                        required>
+                    <option value="">Select State</option>
+                    {% for state in states %}
+                        {% if state %}
+                            <option value="{{ state }}">{{ state }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+
+                <button class="btn btn-primary ms-2">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+
         </div>
+
     </div>
 </div>
 
-<!-- Customers List -->
-<div class="card">
-    <div class="card-header">
-        <h5 class="card-title mb-0">Customer List</h5>
+<!-- Hospital Leads List -->
+<div class="card shadow-sm border-0 rounded-3">
+    <div class="card-header bg-white border-0 py-3">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-hospital-user me-2 text-primary"></i>
+            Hospital Leads
+            <span class="badge bg-primary ms-2">{{ hospital_leads|length }}</span>
+        </h5>
     </div>
-    <div class="card-body p-0">
-        {% if customers %}
-            <!-- Desktop Table View -->
-            <div class="table-responsive d-none d-lg-block">
-                <table class="table table-hover table-striped mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Contact Person</th>
-                            <th>Hospital</th>
-                            <th>Contact</th>
-                            <th>Location</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for customer in customers %}
-                            <tr>
-                                <td>
-                                    <span class="vendor-id-badge">
-                                        <i class="fas  me-1"></i>{{ customer.customer_id }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-circle me-3">
-                                            {{ customer.customer_name|first|upper }}
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0">{{ customer.customer_name }}</h6>
-                                            {% if customer.email %}
-                                                <small class="text-muted">{{ customer.email }}</small>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    {% if customer.company_name %}
-                                        <span class="fw-bold">{{ customer.company_name }}</span>
-                                        {% if customer.gstin %}
-                                            <br><small class="text-muted">GSTIN: {{ customer.gstin }}</small>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-muted">Individual</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div>
-                                        <i class="fas fa-phone me-1"></i>{{ customer.phone_number }}
-                                        {% if customer.phone_number_2 %}
-                                            <br><i class="fas fa-phone me-1"></i>{{ customer.phone_number_2 }}
-                                        {% endif %}
-                                    </div>
-                                </td>
-                                <td>
-                                    {% if customer.city or customer.state %}
-                                        <div>
-                                            {% if customer.city %}{{ customer.city }}{% endif %}
-                                            {% if customer.city and customer.state %}, {% endif %}
-                                            {% if customer.state %}{{ customer.state }}{% endif %}
-                                        </div>
-                                        {% if customer.pincode %}
-                                            <small class="text-muted">{{ customer.pincode }}</small>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-muted">Not specified</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div>{{ customer.created_at|date:"M d, Y" }}</div>
-                                    <small class="text-muted">{{ customer.created_at|date:"H:i" }}</small>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="{% url 'customer_detail' customer.id %}" 
-                                           class="btn btn-sm btn-outline-primary" title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{% url 'edit_customer' customer.id %}" class="btn btn-sm btn-outline-warning" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                title="Delete" onclick="confirmDelete('{{ customer.id }}', '{{ customer.customer_name }}')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
 
-            <!-- Mobile Card View -->
-            <div class="d-lg-none">
-                {% for customer in customers %}
-                    <div class="customer-card border-bottom">
-                        <div class="customer-header d-flex align-items-center justify-content-between p-3" 
-                             data-bs-toggle="collapse" data-bs-target="#customer-{{ customer.id }}" 
-                             aria-expanded="false" style="cursor: pointer;">
+    <div class="card-body p-0">
+        {% if hospital_leads %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-muted small">ID</th>
+                        <th class="text-muted small">Hospital</th>
+                        <th class="text-muted small">Type</th>
+                        <th class="text-muted small">Contact</th>
+                        <th class="text-muted small">Location</th>
+                        <th class="text-muted small">Created</th>
+                        <th class="text-muted small text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for lead in hospital_leads %}
+                    <tr class="border-bottom">
+
+                        <!-- ID -->
+                        <td class="fw-bold text-primary">HL-{{ lead.id }}</td>
+
+                        <!-- Hospital Name -->
+                        <td>
                             <div class="d-flex align-items-center">
-                                <div class="avatar-circle me-3">
-                                    {{ customer.customer_name|first|upper }}
+                                <div class="avatar-circle me-3 bg-gradient-primary text-white fw-bold">
+                                    {{ lead.hospital_name|first|upper }}
                                 </div>
                                 <div>
-                                    <h6 class="mb-0">{{ customer.customer_name }}</h6>
-                                    {% if customer.company_name %}
-                                        <small class="text-muted">{{ customer.company_name }}</small>
-                                    {% else %}
-                                        <small class="text-muted">Individual</small>
-                                    {% endif %}
+                                    <strong class="d-block">{{ lead.hospital_name }}</strong>
+                                    <small class="text-muted">
+                                        {{ lead.first_name }} {{ lead.last_name }}
+                                    </small>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-light text-dark me-2">{{ customer.id }}</span>
-                                <i class="fas fa-chevron-down toggle-icon"></i>
-                            </div>
-                        </div>
-                        
-                        <div class="collapse" id="customer-{{ customer.id }}">
-                            <div class="customer-details p-3 pt-0">
-                                <div class="row g-2">
-                                    <div class="col-12">
-                                        <div class="detail-item d-flex align-items-center mb-2">
-                                            <i class="fas fa-user text-primary me-2"></i>
-                                            <small class="text-muted me-2">Name:</small>
-                                            <span>{{ customer.customer_name }}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    {% if customer.company_name %}
-                                    <div class="col-12">
-                                        <div class="detail-item d-flex align-items-center mb-2">
-                                            <i class="fas fa-building text-primary me-2"></i>
-                                            <small class="text-muted me-2">Company:</small>
-                                            <span>{{ customer.company_name }}</span>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    {% if customer.email %}
-                                    <div class="col-12">
-                                        <div class="detail-item d-flex align-items-center mb-2">
-                                            <i class="fas fa-envelope text-primary me-2"></i>
-                                            <small class="text-muted me-2">Email:</small>
-                                            <span>{{ customer.email }}</span>
-                                        </div>
-                                    </div>
-                                    {% else %}
-                                    <div class="col-12">
-                                        <div class="detail-item d-flex align-items-center mb-2">
-                                            <i class="fas fa-envelope text-muted me-2"></i>
-                                            <small class="text-muted me-2">Email:</small>
-                                            <span class="text-muted">N/A</span>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    <div class="col-12">
-                                        <div class="detail-item d-flex align-items-center mb-2">
-                                            <i class="fas fa-phone text-primary me-2"></i>
-                                            <small class="text-muted me-2">Phone:</small>
-                                            <span>{{ customer.phone_number }}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    {% if customer.phone_number_2 %}
-                                    <div class="col-12">
-                                        <div class="detail-item d-flex align-items-center mb-2">
-                                            <i class="fas fa-phone text-primary me-2"></i>
-                                            <small class="text-muted me-2">Phone 2:</small>
-                                            <span>{{ customer.phone_number_2 }}</span>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    {% if customer.gstin %}
-                                    <div class="col-12">
-                                        <div class="detail-item d-flex align-items-center mb-2">
-                                            <i class="fas fa-fingerprint text-primary me-2"></i>
-                                            <small class="text-muted me-2">GSTIN:</small>
-                                            <span>{{ customer.gstin }}</span>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    <div class="col-12">
-                                        <div class="detail-item d-flex align-items-center mb-2">
-                                            <i class="fas fa-id-card text-primary me-2"></i>
-                                            <small class="text-muted me-2">Customer ID:</small>
-                                            <span>{{ customer.id }}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    {% if customer.city or customer.state %}
-                                    <div class="col-12">
-                                        <div class="detail-item d-flex align-items-start mb-2">
-                                            <i class="fas fa-map-marker-alt text-primary me-2 mt-1"></i>
-                                            <div>
-                                                <small class="text-muted me-2">Address:</small>
-                                                <div>
-                                                    {% if customer.city %}{{ customer.city }}{% endif %}
-                                                    {% if customer.city and customer.state %}, {% endif %}
-                                                    {% if customer.state %}{{ customer.state }}{% endif %}
-                                                    {% if customer.pincode %}
-                                                        <br><small class="text-muted">{{ customer.pincode }}</small>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <!-- Action Buttons -->
-                                <div class="d-flex gap-2 mt-3">
-                                    <a href="{% url 'customer_detail' customer.id %}" 
-                                       class="btn btn-primary btn-sm flex-fill">
-                                        <i class="fas fa-eye me-1"></i>View Details
-                                    </a>
-                                    <a href="{% url 'edit_customer' customer.id %}" 
-                                       class="btn btn-outline-warning btn-sm">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-outline-danger btn-sm" 
-                                            onclick="confirmDelete('{{ customer.id }}', '{{ customer.customer_name }}')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
+                        </td>
 
-            <!-- Pagination -->
-            {% if customers.has_other_pages %}
-                <div class="card-footer">
-                    <nav aria-label="Customer pagination">
-                        <ul class="pagination justify-content-center mb-0">
-                            {% if customers.has_previous %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ customers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if state_filter %}&state={{ state_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}">
-                                        <i class="fas fa-chevron-left"></i>
-                                    </a>
-                                </li>
+                        <!-- Hospital Type -->
+                        <td>
+                            <span class="badge rounded-pill 
+                                {% if lead.hospital_type == 'Direct Hospital' %} bg-success 
+                                {% elif lead.hospital_type == 'Distributed' %} bg-warning text-dark 
+                                {% else %} bg-secondary {% endif %}
+                            ">
+                                {{ lead.hospital_type }}
+                            </span>
+                        </td>
+
+                        <!-- Contact -->
+                        <td>
+                            <div>
+                                <i class="fas fa-phone me-1 text-primary"></i>{{ lead.phone }}
+                            </div>
+                            {% if lead.email %}
+                            <small class="text-muted mt-1 d-block">{{ lead.email }}</small>
                             {% endif %}
+                        </td>
 
-                            {% for num in customers.paginator.page_range %}
-                                {% if customers.number == num %}
-                                    <li class="page-item active">
-                                        <span class="page-link">{{ num }}</span>
-                                    </li>
-                                {% elif num > customers.number|add:-3 and num < customers.number|add:3 %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if state_filter %}&state={{ state_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}">
-                                            {{ num }}
-                                        </a>
-                                    </li>
-                                {% endif %}
-                            {% endfor %}
-
-                            {% if customers.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ customers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if state_filter %}&state={{ state_filter }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </a>
-                                </li>
+                        <!-- Location -->
+                        <td>
+                            <i class="fas fa-map-marker-alt me-1 text-danger"></i>
+                            {{ lead.city }},
+                            {{ lead.state }}
+                            {% if lead.pincode %}
+                            <br><small class="text-muted">{{ lead.pincode }}</small>
                             {% endif %}
-                        </ul>
-                    </nav>
-                </div>
-            {% endif %}
+                        </td>
+
+                        <!-- Created -->
+                        <td>
+                            <span>{{ lead.created_at|date:"M d, Y" }}</span>
+                            <br>
+                            <small class="text-muted">{{ lead.created_at|date:"H:i" }}</small>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-primary rounded-circle" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning rounded-circle" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger rounded-circle" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+        </div>
+
         {% else %}
-            <div class="p-4">
-                <p class="mb-0 text-muted text-center">No customers found.</p>
-            </div>
+        <div class="p-4 text-center text-muted">
+            <i class="fas fa-exclamation-circle me-2"></i>No hospital leads found.
+        </div>
         {% endif %}
     </div>
 </div>
+
+<!-- Custom CSS -->
+<style>
+    .avatar-circle {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #5e72e4, #825ee4);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa !important;
+        transition: 0.2s;
+    }
+
+    .card-header h5 {
+        font-weight: 600;
+        color: #333;
+    }
+</style>
 
 <!-- Custom Styles -->
 <style>
@@ -416,30 +316,6 @@
     }
 </style>
 
-<!-- Delete Confirmation Script -->
-<script>
-    function confirmDelete(customerId, customerName) {
-        if (confirm(`Are you sure you want to delete customer: ${customerName}?`)) {
-            window.location.href = `/customers/delete/${customerId}/`;
-        }
-    }
-    
-    // Handle collapse events to rotate arrow
-    document.addEventListener('DOMContentLoaded', function() {
-        var collapseElements = document.querySelectorAll('.collapse');
-        collapseElements.forEach(function(collapse) {
-            collapse.addEventListener('show.bs.collapse', function() {
-                var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
-                header.setAttribute('aria-expanded', 'true');
-            });
-            
-            collapse.addEventListener('hide.bs.collapse', function() {
-                var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
-                header.setAttribute('aria-expanded', 'false');
-            });
-        });
-    });
-</script>
 
 <script>
 function confirmDelete(leadId, hospitalName) {
@@ -500,6 +376,49 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<!-- For Search -->
+ <script>
+    const select = document.getElementById("hospitalSelect");
+    const hiddenQ = document.getElementById("hiddenQ");
+
+    select.addEventListener("change", function() {
+        const selected = select.options[select.selectedIndex];
+        const id = selected.value;
+        const name = selected.dataset.name;
+        const city = selected.dataset.city;
+
+        // You can choose what to send:
+        hiddenQ.value = ${name} ${city};
+        // OR: hiddenQ.value = ${name}-${id};
+        // OR: hiddenQ.value = ${name}, ${city};
+    });
+</script>
+
+<!-- Delete Confirmation Script -->
+<script>
+    function confirmDelete(customerId, customerName) {
+        if (confirm(Are you sure you want to delete customer: ${customerName}?)) {
+            window.location.href = /customers/delete/${customerId}/;
+        }
+    }
+    
+    // Handle collapse events to rotate arrow
+    document.addEventListener('DOMContentLoaded', function() {
+        var collapseElements = document.querySelectorAll('.collapse');
+        collapseElements.forEach(function(collapse) {
+            collapse.addEventListener('show.bs.collapse', function() {
+                var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
+                header.setAttribute('aria-expanded', 'true');
+            });
+            
+            collapse.addEventListener('hide.bs.collapse', function() {
+                var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
+                header.setAttribute('aria-expanded', 'false');
+            });
+        });
+    });
 </script>
 
 {% endblock %}

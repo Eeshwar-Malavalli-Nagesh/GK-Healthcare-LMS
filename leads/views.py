@@ -72,7 +72,6 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-
 def dashboard(request):
     return render(request, 'dashboard.html')
 
@@ -357,7 +356,6 @@ def get_form_context():
     }
     return context
 
-
 def hospital_leads_list(request):
     search_query = request.GET.get('q', '').strip()
     
@@ -382,7 +380,6 @@ def hospital_leads_list(request):
         'search_query': search_query
     })
 
-
 def hospital_lead_detail(request, lead_id):
     """View to display detailed information about a specific lead"""
     lead = get_object_or_404(HospitalLead, id=lead_id)
@@ -396,7 +393,6 @@ def hospital_lead_detail(request, lead_id):
     }
     return render(request, 'hospital_lead_detail.html', context)
     
-
 def hospital_lead_edit(request, pk):
     lead = get_object_or_404(HospitalLead, pk=pk)
     
@@ -635,7 +631,6 @@ def category_list(request):
 
     return render(request, 'category_list.html', {'page_obj': page_obj})
 
-
 def add_category(request):
     if request.method == 'POST':
         Category.objects.create(
@@ -720,6 +715,7 @@ def add_product(request):
     
     categories = Category.objects.all()
     return render(request, 'add_product.html', {'categories': categories})
+    
 def edit_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     
@@ -914,7 +910,6 @@ def add_customer(request):
     """Display the add customer form"""
     return render(request, 'add_customer.html')
 
-
 def save_customer(request):
     """Save customer data to database"""
     if request.method == 'POST':
@@ -943,7 +938,6 @@ def save_customer(request):
             return redirect('add_customer')
 
     return redirect('add_customer')
-
 
 def customer_list(request):
     """Display list of all customers with search and filter functionality"""
@@ -983,7 +977,7 @@ def customer_list(request):
     page_obj = paginator.get_page(page_number) 
 
     # RETURN ALL DATA TO TEMPLATE
-    return render(request, 'customer_list_2.html', {
+    return render(request, 'customer_list_1.html', {
         'customers': page_obj,
         'states': states,
         'cities': cities,
@@ -991,7 +985,6 @@ def customer_list(request):
         'hospital_leads': hospital_leads,     # ✅ NOW AVAILABLE IN TEMPLATE
         'hospitals':hospitals,
     })
-
 
 def customer_detail(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
@@ -1003,7 +996,6 @@ def customer_detail(request, customer_id):
         'employees': employees,
         'customer_products': customer_products
     })
-
 
 def edit_customer(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
@@ -1033,7 +1025,6 @@ def edit_customer(request, customer_id):
 
     return render(request, 'edit_customer.html', {'customer': customer})
 
-
 def delete_customer(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
 
@@ -1048,8 +1039,6 @@ def delete_customer(request, customer_id):
             return redirect('customer_list')
 
     return render(request, 'delete_customer.html', {'customer': customer})
-
-
 
 def add_employee(request, customer_id):
     """Add new employee linked to a customer"""
@@ -1111,7 +1100,6 @@ def edit_employee(request, employee_id):
         'is_edit': True
     })
 
-
 def delete_employee(request, employee_id):
     """Delete employee"""
     employee = get_object_or_404(Employee, id=employee_id)
@@ -1128,7 +1116,6 @@ def delete_employee(request, employee_id):
             return redirect('customer_detail', customer_id=customer_id)
 
     return render(request, 'delete_employee.html', {'employee': employee})
-
 
 def add_customer_product(request, customer_id):
    customer = get_object_or_404(Customer, id=customer_id)
@@ -1296,7 +1283,6 @@ def vendor_list(request):
         'total_vendors': Vendor.objects.count(),
     })
 
-
 def vendor_detail(request, vendor_id):
     vendor = get_object_or_404(Vendor, id=vendor_id)
     employees = vendor.employees.all()
@@ -1335,7 +1321,6 @@ def edit_vendor(request, vendor_id):
             return redirect('edit_vendor', vendor_id=vendor_id)
 
     return render(request, 'edit_vendor.html', {'vendor': vendor})
-
 
 def delete_vendor(request, vendor_id):
     vendor = get_object_or_404(Vendor, id=vendor_id)
@@ -1520,7 +1505,6 @@ def delete_vendor_product(request, product_id):
     messages.success(request, f'Product "{product_name}" deleted successfully!')
     return redirect('vendor_detail', vendor_id=vendor_id)
 
-
 def generate_report(request):
     """Main reports dashboard view"""
     return render(request, 'generate_report.html')
@@ -1534,7 +1518,6 @@ def installation_report(request):
     }
     return render(request, 'installation_report.html', context)
 
-
 def service_report(request):
     """Service reports view"""
     # Add your service report logic here
@@ -1543,7 +1526,6 @@ def service_report(request):
         'title': 'Service Reports'
     }
     return render(request, 'service_report.html', context)
-
 
 def inspection_report(request):
     """Inspection reports view"""
@@ -1554,7 +1536,6 @@ def inspection_report(request):
     }
     return render(request, 'inspection_report.html', context)
 
- 
 def incident_report(request):
     """Incident reports view"""
     # Add your incident report logic here
@@ -1564,8 +1545,6 @@ def incident_report(request):
     }
     return render(request, 'incident_report.html', context)
 
-
- 
 def create_quotation(request):
     """Create a new quotation"""
     if request.method == 'POST':
@@ -1615,7 +1594,6 @@ def create_quotation(request):
     }
     return render(request, 'quotation_create.html', context)
 
- 
 def quotation_detail(request, quotation_id):
     """View quotation details"""
     quotation = get_object_or_404(Quotation, id=quotation_id)
@@ -1627,7 +1605,6 @@ def quotation_detail(request, quotation_id):
         'title': f'Quotation - {quotation.quotation_number}'
     }
     return render(request, 'quotation_detail.html', context)
-
  
 def edit_quotation(request, quotation_id):
     """Edit existing quotation"""
@@ -1658,7 +1635,6 @@ def edit_quotation(request, quotation_id):
     }
     return render(request, 'quotation_create.html', context)
 
- 
 def quotation_list(request):
     """List all quotations with search and filter"""
     search_form = QuotationSearchForm(request.GET)
@@ -1695,7 +1671,6 @@ def quotation_list(request):
     }
     return render(request, 'quotation_list.html', context)
 
- 
 def quotation_report(request):
     """Quotation reports view"""
     # Get filter parameters
@@ -1763,7 +1738,6 @@ def quotation_report(request):
     }
     return render(request, 'quotation_report.html', context)
 
- 
 def delete_quotation(request, quotation_id):
     """Delete quotation"""
     quotation = get_object_or_404(Quotation, id=quotation_id)
@@ -1780,7 +1754,6 @@ def delete_quotation(request, quotation_id):
     }
     return render(request, 'quotation_delete.html', context)
 
- 
 def ajax_calculate_totals(request):
     """AJAX endpoint to calculate totals"""
     if request.method == 'POST':
@@ -1809,7 +1782,6 @@ def ajax_calculate_totals(request):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
- 
 def purchase_order_report(request):
     """Purchase order reports view"""
     # Add your purchase order report logic here
@@ -1819,7 +1791,6 @@ def purchase_order_report(request):
     }
     return render(request, 'purchase_order_report.html', context)
 
- 
 def delivery_challan_report(request):
     """Delivery challan reports view"""
     # Add your delivery challan report logic here
@@ -1831,12 +1802,10 @@ def delivery_challan_report(request):
 
 #view_report
 
- 
 def view_report(request):
     """Main reports dashboard view"""
     return render(request, 'view_reports.html')
 
- 
 def expense_dashboard(request):
     """Main expense dashboard showing all projects"""
     try:
@@ -1875,7 +1844,6 @@ def expense_dashboard(request):
         messages.error(request, f'Error loading dashboard: {str(e)}')
         return render(request, 'expenses/expense_dashboard.html', {'projects': []})
 
- 
 def add_project(request):
     if request.method == 'POST':
         form = ProjectForm(request.POST)
@@ -1891,10 +1859,6 @@ def add_project(request):
         form = ProjectForm()
 
     return render(request, 'expenses/add_project.html', {'form': form})
-
-
-
-
  
 def project_detail(request, project_id):
     """Project detail page showing expenses"""
@@ -1947,8 +1911,6 @@ def project_detail(request, project_id):
         messages.error(request, f'Error loading project details: {str(e)}')
         return redirect('expense_dashboard')
 
-
- 
 def add_expense(request, project_id):
     """Add expense to a project"""
     project = get_object_or_404(Project, id=project_id, created_by=request.user)
@@ -2001,8 +1963,6 @@ def delete_project(request, project_id):
         project.delete()
         messages.success(request, f'Project "{project.project_name}" deleted successfully.')
     return redirect('dashboard')  # or wherever you want to redirect
-
-
  
 def edit_expense(request, expense_id):
     """Edit an expense"""
@@ -2029,8 +1989,6 @@ def edit_expense(request, expense_id):
     }
     return render(request, 'expenses/edit_expense.html', context)
 
-
- 
 def view_expense(request, expense_id):
     """View expense details"""
     expense = get_object_or_404(Expense, id=expense_id, created_by=request.user)
@@ -2041,8 +1999,6 @@ def view_expense(request, expense_id):
     }
     return render(request, 'expenses/view_expense.html', context)
 
-
- 
 def delete_expense(request, expense_id):
     """Delete an expense"""
     expense = get_object_or_404(Expense, id=expense_id, created_by=request.user)
@@ -2057,10 +2013,8 @@ def delete_expense(request, expense_id):
     
     return redirect('project_detail', project_id=project_id)
 
-
 from .models import *
 
- 
 def add_staff(request):
     """Add new employee (general, not linked to customer/vendor)"""
     if request.method == 'POST':
@@ -2103,7 +2057,6 @@ def add_staff(request):
 
     return render(request, 'add_staff.html')
 
- 
 def assign_task(request):
     """Assign task to employee"""
 
@@ -2155,6 +2108,10 @@ def assign_task(request):
 
     return render(request, 'assign_task.html', {'staff': staff, 'hospitals': hospitals,
                                                 'cities': cities, 'states': states})
+
+def manage_staff(request):
+    staff = Staff.objects.all()
+    return render(request, "manage_staff.html", {"staff": staff})
 
 import urllib.parse
 

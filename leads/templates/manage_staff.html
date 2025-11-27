@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Staff{% endblock %}
+
+{% block content %}
+
+<style>
+    body {
+        background: #f4f7fc;
+    }
+
+    /* ---------- HEADER ---------- */
+    .page-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    /* ---------- DESKTOP TABLE VIEW ---------- */
+    .desktop-table {
+        display: none;  /* hidden on mobile */
+    }
+
+    .staff-img {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #007bff;
+    }
+
+    .action-btn {
+        font-size: 0.85rem;
+    }
+
+    /* ---------- MOBILE CARD VIEW ---------- */
+    .staff-card {
+        background: white;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .staff-info {
+        flex: 1;
+        font-size: 0.9rem;
+    }
+
+    .staff-info strong {
+        font-size: 1rem;
+        color: #0d6efd;
+    }
+
+    .action-buttons {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .action-buttons a {
+        flex: 1;
+        padding: 8px;
+        font-size: 0.8rem;
+    }
+
+    /* ---------- SHOW TABLE ON DESKTOP ---------- */
+    @media (min-width: 768px) {
+
+        /* hide card layout */
+        .mobile-view {
+            display: none;
+        }
+
+        /* show table layout */
+        .desktop-table {
+            display: block;
+        }
+
+        .staff-img {
+            width: 80px;
+            height: 80px;
+        }
+    }
+</style>
+
+
+<!-- ---------- PAGE TITLE ---------- -->
+<div class="page-header">
+    <h3 class="mb-0">Manage Staff</h3>
+</div>
+
+
+
+
+<!-- ===================================================== -->
+<!-- ================ MOBILE CARD LAYOUT  D:\GK-Healthcare-LMS\leads\templates\manage-task.html================== -->
+
+<!-- ===================================================== -->
+
+<div class="mobile-view">
+
+{% for s in staff %}
+<div class="staff-card">
+
+    <div>
+        {% if s.upload_photo %}
+            <img src="{{ s.upload_photo.url }}" class="staff-img">
+        {% else %}
+            <img src="https://via.placeholder.com/70" class="staff-img">
+        {% endif %}
+    </div>
+
+    <div class="staff-info">
+        <strong>{{ s.name }}</strong><br>
+        📧 {{ s.email }} <br>
+        📱 {{ s.phone_number }} <br>
+        🎂 {{ s.date_of_birth }} <br>
+        🆔 Aadhar: {{ s.aadhar_number }} <br>
+        🧾 PAN: {{ s.pan_number }}
+
+        <div class="action-buttons mt-2">
+            <a href="#" class="btn btn-info btn-sm text-white">View</a>
+            <a href="#" class="btn btn-warning btn-sm text-dark">Edit</a>
+            <a href="#" class="btn btn-danger btn-sm text-white">Delete</a>
+        </div>
+    </div>
+
+</div>
+{% empty %}
+<p class="text-center text-muted">No staff records found.</p>
+{% endfor %}
+
+</div>
+
+
+
+
+
+
+<!-- ===================================================== -->
+<!-- ================ DESKTOP TABLE LAYOUT ================ -->
+<!-- ===================================================== -->
+
+<div class="desktop-table">
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-primary">
+            <tr>
+                <th>Photo</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>DOB</th>
+                <th>Aadhar</th>
+                <th>PAN</th>
+                <th width="180">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for s in staff %}
+            <tr>
+                <td>
+                    {% if s.upload_photo %}
+                        <img src="{{ s.upload_photo.url }}" class="staff-img">
+                    {% else %}
+                        <img src="https://via.placeholder.com/80" class="staff-img">
+                    {% endif %}
+                </td>
+
+                <td>{{ s.name }}</td>
+                <td>{{ s.email }}</td>
+                <td>{{ s.phone_number }}</td>
+                <td>{{ s.date_of_birth }}</td>
+                <td>{{ s.aadhar_number }}</td>
+                <td>{{ s.pan_number }}</td>
+
+                <td>
+                    <a href="#" class="btn btn-sm btn-info action-btn">View</a>
+                    <a href="#" class="btn btn-sm btn-warning action-btn">Edit</a>
+                    <a href="#" class="btn btn-sm btn-danger action-btn">Delete</a>
+                </td>
+            </tr>
+
+        {% empty %}
+            <tr>
+                <td colspan="8" class="text-center text-muted">
+                    No Staff Records Found.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</div>
+
+{% endblock %}
