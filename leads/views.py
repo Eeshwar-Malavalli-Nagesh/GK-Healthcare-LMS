@@ -73,7 +73,20 @@ def logout_view(request):
     return redirect('login')
 
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    total_customers = Customer.objects.count()
+    total_vendors = Vendor.objects.count()
+    total_leads = HospitalLead.objects.count()
+    total_tasks = TaskAssign.objects.count()
+    total_products = Product.objects.count()
+
+    context = {
+        "total_customers": total_customers,
+        "total_vendors": total_vendors,
+        "total_leads": total_leads,
+        "total_tasks": total_tasks,
+        "total_products": total_products,
+    }
+    return render(request, "dashboard.html", context)
 
 def payment(request):
     return render(request, 'payment.html')
@@ -357,13 +370,30 @@ def get_form_context():
     return context
 
 def hospital_leads_list(request):
+
+    # GET PARAMETERS
     search_query = request.GET.get('q', '').strip()
-    
+    hospital_filter = request.GET.get('hospital', '').strip()
+    city_filter = request.GET.get('city', '').strip()
+    state_filter = request.GET.get('state', '').strip()
+
+    # BASE QUERY
     leads = HospitalLead.objects.all().prefetch_related(
         'lead_parts__part',
         'lead_products__product'
     ).order_by('-created_at')
-    
+
+    # APPLY FILTERS
+    if hospital_filter:
+        leads = leads.filter(id=hospital_filter)
+
+    if city_filter:
+        leads = leads.filter(city__iexact=city_filter)
+
+    if state_filter:
+        leads = leads.filter(state__iexact=state_filter)
+
+    # APPLY SEARCH
     if search_query:
         leads = leads.filter(
             Q(hospital_name__icontains=search_query) |
@@ -375,9 +405,20 @@ def hospital_leads_list(request):
             Q(state__icontains=search_query)
         )
 
+    # DROPDOWN LISTS
+    hospitals = HospitalLead.objects.all()
+    cities = HospitalLead.objects.values_list('city', flat=True).distinct()
+    states = HospitalLead.objects.values_list('state', flat=True).distinct()
+
     return render(request, 'hospital_leads_list.html', {
         'leads': leads,
-        'search_query': search_query
+        'search_query': search_query,
+        'hospitals': hospitals,
+        'cities': cities,
+        'states': states,
+        'selected_hospital': hospital_filter,
+        'selected_city': city_filter,
+        'selected_state': state_filter,
     })
 
 def hospital_lead_detail(request, lead_id):
@@ -1242,20 +1283,26 @@ def save_vendor(request):
     return redirect('add_vendor')
 
 def vendor_list(request):
-    """Display list of all vendors with search and filter functionality"""
     vendors = Vendor.objects.all()
+    vendors_all = Vendor.objects.all().order_by('vendor_name')
 
-    # Search
+    # Dropdown + search box
     search_query = request.GET.get('search', '')
+
     if search_query:
-        vendors = vendors.filter(
-            Q(vendor_id__icontains=search_query) |
-            Q(vendor_name__icontains=search_query) |
-            Q(company_name__icontains=search_query) |
-            Q(phone_number__icontains=search_query) |
-            Q(email__icontains=search_query) |
-            Q(city__icontains=search_query)
-        )
+        # If the selected vendor matches EXACT name from dropdown → filter by exact name
+        if vendors_all.filter(vendor_name=search_query).exists():
+            vendors = vendors.filter(vendor_name=search_query)
+        else:
+            # Otherwise treat it as normal search input typing
+            vendors = vendors.filter(
+                Q(vendor_id__icontains=search_query) |
+                Q(vendor_name__icontains=search_query) |
+                Q(company_name__icontains=search_query) |
+                Q(phone_number__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(city__icontains=search_query)
+            )
 
     # Filters
     state_filter = request.GET.get('state', '')
@@ -1266,15 +1313,18 @@ def vendor_list(request):
     if city_filter:
         vendors = vendors.filter(city__icontains=city_filter)
 
-    states = Vendor.objects.exclude(state__isnull=True).exclude(state='').values_list('state', flat=True).distinct().order_by('state')
-    cities = Vendor.objects.exclude(city__isnull=True).exclude(city='').values_list('city', flat=True).distinct().order_by('city')
+    states = Vendor.objects.exclude(state__isnull=True).exclude(state='')\
+                .values_list('state', flat=True).distinct().order_by('state')
+
+    cities = Vendor.objects.exclude(city__isnull=True).exclude(city='')\
+                .values_list('city', flat=True).distinct().order_by('city')
 
     paginator = Paginator(vendors, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get('page'))
 
     return render(request, 'vendor_list.html', {
         'vendors': page_obj,
+        'vendors_all': vendors_all,
         'search_query': search_query,
         'state_filter': state_filter,
         'city_filter': city_filter,
@@ -1282,6 +1332,7 @@ def vendor_list(request):
         'cities': cities,
         'total_vendors': Vendor.objects.count(),
     })
+
 
 def vendor_detail(request, vendor_id):
     vendor = get_object_or_404(Vendor, id=vendor_id)

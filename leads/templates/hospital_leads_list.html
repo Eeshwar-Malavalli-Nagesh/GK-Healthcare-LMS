@@ -1,52 +1,142 @@
 {% extends "base.html" %}
-{% block title %}All Hospital Leads{% endblock %}
+{% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h3 class="mb-0">
-                        <i class="fas fa-hospital me-2"></i>Hospital/Clinic Leads
-                    </h3>
-                    <span class="badge bg-light text-dark mt-1">Total: {{ leads|length }}</span>
+<style>
+    .dropdown-wrapper {
+        position: relative;
+    }
+    .dropdown-wrapper .toggle-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #666;
+    }
+</style>
+
+<!-- DESKTOP HEADER -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-0">
+                    <i class="fas fa-hospital me-2"></i>Hospital/Clinic Leads
+                </h3>
+                <span class="badge bg-light text-dark mt-1">Total: {{ leads|length }}</span>
+            </div>
+
+            <!-- Desktop Buttons -->
+            <div class="d-flex gap-2 d-none d-md-flex">
+                <button type="button" class="btn btn-light btn-sm" id="searchToggle" title="Search"
+                        data-bs-toggle="collapse" data-bs-target="#searchSection">Filter
+                    <i class="fas fa-filter"></i>
+                </button>
+
+                <a href="{% url 'new_lead' %}" class="btn btn-light btn-sm" title="Add New Lead">
+                    <i class="fas fa-plus"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MOBILE FILTERS DROPDOWN BUTTON -->
+    <div class="d-md-none p-3">
+        <button class="btn btn-primary w-100 d-flex justify-content-between align-items-center"
+                data-bs-toggle="collapse" data-bs-target="#searchSection">
+            <span>Filters</span>
+            <i class="fas fa-filter"></i>
+        </button>
+    </div>
+
+
+    <!-- SEARCH / FILTERS COLLAPSIBLE SECTION (shared by mobile + desktop) -->
+    <div class="collapse" id="searchSection">
+        <div class="card-body bg-light border-bottom">
+
+            <form method="get" class="row g-3 align-items-center">
+
+                <!-- Hospital Filter -->
+                <div class="col-md-3">
+    <div class="dropdown-wrapper">
+
+        <select name="hospital" class="form-control">
+            <option value="">Hospital</option>
+
+            {% for hospital in hospitals %}
+            <option value="{{ hospital.id }}"
+                {% if request.GET.hospital == hospital.id|stringformat:"s" %}selected{% endif %}>
+                {{ hospital.hospital_name }} - {{ hospital.city }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <i class="fas fa-chevron-down toggle-icon"></i>
+
+    </div>
+</div>
+
+                <div class="col-md-3">
+    <div class="dropdown-wrapper">
+        <select name="city" class="form-control">
+            <option value="">City</option>
+            {% for city in cities %}
+            {% if city %}
+            <option value="{{ city }}"
+                {% if request.GET.city == city %}selected{% endif %}>
+                {{ city }}
+            </option>
+            {% endif %}
+            {% endfor %}
+        </select>
+
+        <i class="fas fa-chevron-down toggle-icon"></i>
+    </div>
+</div>
+                <!-- State Filter -->
+               <div class="col-md-3">
+    <div class="dropdown-wrapper">
+        <select name="state" class="form-control">
+            <option value="">State</option>
+            {% for state in states %}
+            {% if state %}
+            <option value="{{ state }}"
+                {% if request.GET.state == state %}selected{% endif %}>
+                {{ state }}
+            </option>
+            {% endif %}
+            {% endfor %}
+        </select>
+
+        <i class="fas fa-chevron-down toggle-icon"></i>
+    </div>
+</div>
+
+                <!-- Search -->
+                <div class="col-md-3 d-flex">
+                    <input type="text" name="q" class="form-control"
+                        placeholder="Search..."
+                        value="{{ request.GET.q }}">
                 </div>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-light btn-sm" id="searchToggle" title="Search">
-                        <i class="fas fa-search"></i>
+
+                <!-- Search & Clear Buttons -->
+                <div class="col-md-12 d-flex gap-2 mt-1">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
                     </button>
-                    <a href="{% url 'new_lead' %}" class="btn btn-light btn-sm" title="Add New Lead">
-                        <i class="fas fa-plus"></i>
+                    <a href="{% url 'hospital_leads_list' %}" class="btn btn-outline-danger">
+                        <i class="fas fa-times"></i> Clear Filters
                     </a>
                 </div>
-            </div>
-        </div>
 
-        <!-- Collapsible Search Section -->
-        <div class="collapse" id="searchSection">
-            <div class="card-body bg-light border-bottom">
-                <form method="get" class="row g-2">
-                    <div class="col-9">
-                        <input type="text" name="q" class="form-control" 
-                               placeholder="Search by hospital name, contact person..." 
-                               value="{{ search_query }}" id="searchInput">
-                    </div>
-                    <div class="col-3">
-                        <div class="d-flex gap-1">
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="fas fa-search"></i>
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSearch()">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
+            </form>
 
-        <div class="card-body p-0">
+        </div>
+    </div>
+
+     <div class="card-body p-0">
             {% if leads %}
                 <!-- Desktop Table View -->
                 <div class="table-responsive d-none d-lg-block">
@@ -297,239 +387,7 @@
                 </div>
             {% endif %}
         </div>
-    </div>
-</div>
-<!-- 
- Statistics Cards 
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ leads|length }}</h4>
-                        <p class="mb-0">Total Leads</p>
-                    </div>
-                    <i class="fas fa-hospital fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ leads|length }}</h4>
-                        <p class="mb-0">This Month</p>
-                    </div>
-                    <i class="fas fa-chart-line fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{% for lead in leads %}{% if lead.followup_date %}1{% endif %}{% endfor %}</h4>
-                        <p class="mb-0">Follow-ups Due</p>
-                    </div>
-                    <i class="fas fa-calendar-check fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ leads|length }}</h4>
-                        <p class="mb-0">Active Leads</p>
-                    </div>
-                    <i class="fas fa-users fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> -->
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirm Delete</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete the lead for "<strong id="hospitalName"></strong>"?</p>
-                <p class="text-danger">This action cannot be undone and will also delete all associated products and parts.</p>
-            </div>
-            <div class="modal-footer">
-                <form id="deleteForm" method="post">
-                    {% csrf_token %}
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Delete Lead</button>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>
 
-<style>
-    .avatar-circle {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(45deg, #17a2b8, #138496);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 16px;
-    }
-    
-    .lead-card {
-        transition: all 0.3s ease;
-    }
-    
-    .lead-card:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .lead-header {
-        transition: background-color 0.2s ease;
-    }
-    
-    .lead-header:hover {
-        background-color: #e9ecef;
-    }
-    
-    .toggle-icon {
-        transition: transform 0.3s ease;
-    }
-    
-    .lead-header[aria-expanded="true"] .toggle-icon {
-        transform: rotate(180deg);
-    }
-    
-    .detail-item {
-        font-size: 14px;
-    }
-    
-    .detail-item i {
-        width: 16px;
-        text-align: center;
-    }
-    
-    .product-list, .parts-list {
-        max-width: 200px;
-    }
-    
-    .badge {
-        font-size: 0.75em;
-    }
-    
-    .btn-group .btn {
-        border-radius: 0.375rem;
-        margin-right: 2px;
-    }
-    
-    .card {
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-    
-    .opacity-75 {
-        opacity: 0.75;
-    }
-    
-    @media (max-width: 576px) {
-        .avatar-circle {
-            width: 35px;
-            height: 35px;
-            font-size: 14px;
-        }
-        
-        .lead-header h6 {
-            font-size: 14px;
-        }
-        
-        .lead-header small {
-            font-size: 12px;
-        }
-        
-        .detail-item {
-            font-size: 13px;
-        }
-        
-        .badge {
-            font-size: 0.7em;
-        }
-    }
-</style>
-
-<script>
-function confirmDelete(leadId, hospitalName) {
-    document.getElementById('hospitalName').textContent = hospitalName;
-    document.getElementById('deleteForm').action = '/leads/hospital/' + leadId + '/delete/';
-    var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    modal.show();
-}
-
-function clearSearch() {
-    window.location.href = window.location.pathname;
-}
-
-// Handle collapse events and search functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle lead card collapse events
-    var collapseElements = document.querySelectorAll('.collapse[id^="lead-"]');
-    collapseElements.forEach(function(collapse) {
-        collapse.addEventListener('show.bs.collapse', function() {
-            var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
-            if (header) {
-                header.setAttribute('aria-expanded', 'true');
-            }
-        });
-        
-        collapse.addEventListener('hide.bs.collapse', function() {
-            var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
-            if (header) {
-                header.setAttribute('aria-expanded', 'false');
-            }
-        });
-    });
-
-    // Search toggle functionality
-    const searchToggle = document.getElementById('searchToggle');
-    const searchSection = document.getElementById('searchSection');
-    const searchInput = document.getElementById('searchInput');
-
-    if (searchToggle && searchSection) {
-        searchToggle.addEventListener('click', function() {
-            const bsCollapse = new bootstrap.Collapse(searchSection, {
-                toggle: true
-            });
-        });
-
-        // Focus input when search section is shown
-        searchSection.addEventListener('shown.bs.collapse', function() {
-            if (searchInput) {
-                searchInput.focus();
-            }
-        });
-    }
-
-    // Auto-expand search if there's a search query
-    if (searchInput && searchInput.value.trim() !== '' && searchSection) {
-        const bsCollapse = new bootstrap.Collapse(searchSection, {
-            show: true
-        });
-    }
-});
-</script>
 {% endblock %}

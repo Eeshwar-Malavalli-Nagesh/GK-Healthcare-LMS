@@ -40,31 +40,33 @@
             padding: 6px 10px;
         }
     }
+
+@media(max-width: 576px) {
+    .page-header .badge {
+        margin: 6px;
+        font-size: 23px;
+        padding: 4px 8px;
+    }
+}
+
+
 </style>
 
 
-<!-- PAGE HEADER -->
 <div class="page-header">
     <div class="d-flex justify-content-between align-items-center flex-wrap">
         <div>
             <h1 class="page-title">
                 <i class="fas fa-users me-2"></i>Customers
             </h1>
-            <nav aria-label="breadcrumb" class="d-none d-md-block">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a href="{% url 'dashboard' %}">
-                            <i class="fas fa-home"></i>
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active">Customers</li>
-                </ol>
-            </nav>
+
+            <!-- Exact style you requested -->
+            <span class="badge bg-primary">
+                Total: {{ hospital_leads|length }}
+            </span>
         </div>
     </div>
 </div>
-
-
 
 
 <!-- MOBILE DROPDOWN FILTER BUTTON -->
@@ -76,92 +78,93 @@
     </button>
 </div>
 
-<!-- FILTER CARD (Responsive: Card on Desktop, Dropdown on Mobile) -->
+
+<!-- FILTER CARD -->
 <div id="filtersDropdown" class="collapse d-md-block">
-    <!-- FILTERS CARD -->
 <div class="card">
     <div class="card-body bg-light border-bottom">
+        
+        <div class="row g-3 align-items-center">
 
-         <div class="row g-3 align-items-center">
-
-            <!-- Hospital -->
+            <!-- Hospital Filter -->
             <form class="col-md-3 d-flex" method="get" action="{% url 'customer_list' %}">
-                {% csrf_token %}
                 <input type="hidden" name="q" id="hiddenHospitalRow">
-
-                <select class="form-control" name="hospital"
-                        onchange="document.getElementById('hiddenHospitalRow').value = 'hospital_name '+this.options[this.selectedIndex].text;"
-                        required>
-                    <option value="">Select Hospital ID</option>
-                    {% for hospital in hospitals %}
+                
+                <div class="input-group">
+                    <select class="form-control" name="hospital"
+                            onchange="document.getElementById('hiddenHospitalRow').value = 'hospital_name '+this.options[this.selectedIndex].text;">
+                        <option value="">Hospital ID</option>
+                        {% for hospital in hospitals %}
                         <option value="{{ hospital.id }}">
                             {{ hospital.id }} - {{ hospital.hospital_name }} - {{ hospital.city }}
                         </option>
-                    {% endfor %}
-                </select>
-
-                <button class="btn btn-primary ms-2">
-                    <i class="fas fa-search"></i>
-                </button>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-primary" title="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
             </form>
 
-            <!-- City -->
+            <!-- City Filter -->
             <form class="col-md-3 d-flex" method="get" action="{% url 'customer_list' %}">
-                {% csrf_token %}
                 <input type="hidden" name="q" id="hiddenCityRow">
 
-                <select class="form-control" name="city"
-                        onchange="document.getElementById('hiddenCityRow').value = 'city '+this.value;"
-                        required>
-                    <option value="">Select City</option>
-                    {% for city in cities %}
+                <div class="input-group">
+                    <select class="form-control" name="city"
+                            onchange="document.getElementById('hiddenCityRow').value = 'city '+this.value;">
+                        <option value="">City</option>
+                        {% for city in cities %}
                         {% if city %}
-                            <option value="{{ city }}">{{ city }}</option>
+                        <option value="{{ city }}">{{ city }}</option>
                         {% endif %}
-                    {% endfor %}
-                </select>
-
-                <button class="btn btn-primary ms-2">
-                    <i class="fas fa-search"></i>
-                </button>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-primary" title="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
             </form>
 
-            <!-- State -->
+            <!-- State Filter -->
             <form class="col-md-3 d-flex" method="get" action="{% url 'customer_list' %}">
-                {% csrf_token %}
                 <input type="hidden" name="q" id="hiddenStateRow">
 
-                <select class="form-control" name="state"
-                        onchange="document.getElementById('hiddenStateRow').value = 'state '+this.value;"
-                        required>
-                    <option value="">Select State</option>
-                    {% for state in states %}
+                <div class="input-group">
+                    <select class="form-control" name="state"
+                            onchange="document.getElementById('hiddenStateRow').value = 'state '+this.value;">
+                        <option value="">State</option>
+                        {% for state in states %}
                         {% if state %}
-                            <option value="{{ state }}">{{ state }}</option>
+                        <option value="{{ state }}">{{ state }}</option>
                         {% endif %}
-                    {% endfor %}
-                </select>
-
-                <button class="btn btn-primary ms-2">
-                    <i class="fas fa-search"></i>
-                </button>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-primary" title="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
             </form>
 
-        </div>
+            <!-- CLEAN FILTER BUTTON -->
+            <div class="col-md-3">
+                <a href="{% url 'customer_list' %}" class="btn btn-outline-danger w-100">
+                    <i class="fas fa-times-circle me-1"></i> Clear Filters
+                </a>
+            </div>
 
+        </div>
     </div>
 </div>
-
 </div>
-
 
 <!-- VIEW TOGGLE BUTTONS -->
 <div class="container mt-4">
     <div class="d-flex justify-content-end mb-3">
-        <button id="tableViewBtn" class="btn btn-outline-primary view-toggle-btn active me-2">
+        <button id="tableViewBtn" class="btn btn-outline-primary view-toggle-btn me-2">
             <i class="fas fa-table"></i> Table View
         </button>
-        <button id="cardViewBtn" class="btn btn-outline-primary view-toggle-btn">
+        <button id="cardViewBtn" class="btn btn-outline-primary view-toggle-btn active">
             <i class="fas fa-list"></i> Card View
         </button>
     </div>
@@ -354,6 +357,10 @@
     const tableView = document.getElementById("tableView");
     const cardView = document.getElementById("cardView");
 
+    // Default: show card view first
+    cardView.style.display = "block";
+    tableView.style.display = "none";
+
     tableBtn.onclick = () => {
         tableView.style.display = "block";
         cardView.style.display = "none";
@@ -368,5 +375,6 @@
         tableBtn.classList.remove("active");
     };
 </script>
+
 
 {% endblock %}
