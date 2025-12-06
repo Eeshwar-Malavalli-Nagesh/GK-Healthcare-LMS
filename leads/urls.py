@@ -77,31 +77,8 @@ urlpatterns = [
     # path('reports/quotation/', views.quotation_report, name='quotation_report'),
     path('reports/purchase-order/', views.purchase_order_report, name='purchase_order_report'),
     path('reports/delivery-challan/', views.delivery_challan_report, name='delivery_challan_report'),
-
-     path('expenses/', views.expense_dashboard, name='expense_dashboard'),
-     
     
-    # Project Management
-    path('expenses/add-project/', views.add_project, name='add_project'),
-    path('expenses/project/<int:project_id>/', views.project_detail, name='project_detail'),
-    path('edit-project/<int:project_id>/', views.edit_project, name='edit_project'),
-    path('delete-project/<int:project_id>/', views.delete_project, name='delete_project'),
-    
-    # Expense Management
-    path('expenses/project/<int:project_id>/add-expense/', views.add_expense, name='add_expense'),
-    path('expenses/edit/<int:expense_id>/', views.edit_expense, name='edit_expense'),
-    path('expenses/view/<int:expense_id>/', views.view_expense, name='view_expense'),
-    path('expenses/delete/<int:expense_id>/', views.delete_expense, name='delete_expense'),
-    
-    # # Category Management
-    # path('expenses/categories/', views.manage_categories, name='manage_categories'),
-    # path('expenses/categories/delete/<int:category_id>/', views.delete_category, name='delete_category'),
-    
-    # # Reports
-    # path('expenses/reports/', views.expense_reports, name='expense_reports'),
-
-    # Quotation Management
-     path('', views.quotation_list, name='quotation_list'),
+    path('quotation_list', views.quotation_list, name='quotation_list'),
     path('quotations/', views.quotation_list, name='quotation_list'),
     path('quotations/create/', views.create_quotation, name='create_quotation'),
     path('quotations/<int:quotation_id>/', views.quotation_detail, name='quotation_detail'),
@@ -119,7 +96,19 @@ urlpatterns = [
     
     # Add Employee
     path('add-staff/', views.add_staff, name='add_staff'),
+    path('manage-staff/', views.manage_staff, name='manage_staff'),
+
     path('assign-task/', views.assign_task, name='assign_task'),
+    path("staff/add/", views.add_staff, name="add_staff"),
+    path("staff/<int:staff_id>/edit/", views.edit_staff, name="edit_staff"),
+    path("staff/<int:staff_id>/delete/", views.delete_staff, name="delete_staff"),  
+    path("staff/<int:staff_id>/view/", views.view_staff, name="view_staff"),
+
     path('manage-task/', views.manage_task, name='manage_task'),
+    
     path('view-task/<int:task_id>/', views.view_task, name='view_task'),
+    path("staff-expense/add/", views.add_staff_expense, name="add_staff_expense"),
+    path("staff-expense/", views.staff_expense_list, name="staff_expense_list"),
+
 ]
+

@@ -8,7 +8,7 @@
         <div>
             <h1 class="page-title">
                 <i class="fas fa-users me-2"></i>Customers
-                
+                <span class="badge bg-primary ms-2">{{ total_customers }}</span>
             </h1>
             <nav aria-label="breadcrumb" class="d-none d-md-block">
                 <ol class="breadcrumb">
@@ -17,7 +17,13 @@
                 </ol>
             </nav>
         </div>
-      
+        <div>
+            <a href="{% url 'add_customer' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2 d-none d-sm-inline"></i>
+                <span class="d-none d-sm-inline">Add Customer</span>
+                <i class="fas fa-plus d-sm-none"></i>
+            </a>
+        </div>
     </div>
 </div>
 
@@ -390,17 +396,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const city = selected.dataset.city;
 
         // You can choose what to send:
-        hiddenQ.value = ${name} ${city};
-        // OR: hiddenQ.value = ${name}-${id};
-        // OR: hiddenQ.value = ${name}, ${city};
+        hiddenQ.value = `${name} ${city}`;
+        // OR: hiddenQ.value = `${name}-${id}`;
+        // OR: hiddenQ.value = `${name}, ${city}`;
     });
 </script>
 
 <!-- Delete Confirmation Script -->
 <script>
     function confirmDelete(customerId, customerName) {
-        if (confirm(Are you sure you want to delete customer: ${customerName}?)) {
-            window.location.href = /customers/delete/${customerId}/;
+        if (confirm(`Are you sure you want to delete customer: ${customerName}?`)) {
+            window.location.href = `/customers/delete/${customerId}/`;
         }
     }
     
