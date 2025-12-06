@@ -394,6 +394,11 @@ def hospital_leads_list(request):
     cities = HospitalLead.objects.exclude(city="").values_list('city', flat=True).distinct()
     states = HospitalLead.objects.exclude(state="").values_list('state', flat=True).distinct()
 
+    # DROPDOWN LISTS
+    hospitals = HospitalLead.objects.all()
+    cities = HospitalLead.objects.values_list('city', flat=True).distinct()
+    states = HospitalLead.objects.values_list('state', flat=True).distinct()
+
     return render(request, 'hospital_leads_list.html', {
         'leads': leads,
         'search_query': search_query,
@@ -408,7 +413,6 @@ def hospital_leads_list(request):
     'total_customers': total_customers,
     'total_normal_leads': total_normal_leads,
     })
-
 
 def hospital_lead_detail(request, lead_id):
     """View to display detailed information about a specific lead"""
