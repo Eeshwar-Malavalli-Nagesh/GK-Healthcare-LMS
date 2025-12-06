@@ -1,535 +1,409 @@
 {% extends "base.html" %}
-{% block title %}All Hospital Leads{% endblock %}
+{% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h3 class="mb-0">
-                        <i class="fas fa-hospital me-2"></i>Hospital/Clinic Leads
-                    </h3>
-                    <span class="badge bg-light text-dark mt-1">Total: {{ leads|length }}</span>
-                </div>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-light btn-sm" id="searchToggle" title="Search">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    <a href="{% url 'new_lead' %}" class="btn btn-light btn-sm" title="Add New Lead">
-                        <i class="fas fa-plus"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Collapsible Search Section -->
-        <div class="collapse" id="searchSection">
-            <div class="card-body bg-light border-bottom">
-                <form method="get" class="row g-2">
-                    <div class="col-9">
-                        <input type="text" name="q" class="form-control" 
-                               placeholder="Search by hospital name, contact person..." 
-                               value="{{ search_query }}" id="searchInput">
-                    </div>
-                    <div class="col-3">
-                        <div class="d-flex gap-1">
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="fas fa-search"></i>
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSearch()">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="card-body p-0">
-            {% if leads %}
-                <!-- Desktop Table View -->
-                <div class="table-responsive d-none d-lg-block">
-                    <table class="table table-hover mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th>Hospital Name</th>
-                                <th>Contact Person</th>
-                                <th>Phone</th>
-                                <th>Type</th>
-                                <th>Products</th>
-                                <th>Parts</th>
-                                <th>Follow-up</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for lead in leads %}
-                            <tr>
-                                <td>
-                                    <div class="fw-bold text-primary">{{ lead.hospital_name }}</div>
-                                    <small class="text-muted">{{ lead.city|default:"" }}{% if lead.city and lead.state %}, {% endif %}{{ lead.state|default:"" }}</small>
-                                </td>
-                                <td>
-                                    <div>{{ lead.first_name }} {{ lead.last_name }}</div>
-                                    {% if lead.email %}
-                                        <small class="text-muted">{{ lead.email }}</small>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="text-nowrap">{{ lead.phone }}</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-info text-dark">{{ lead.hospital_type }}</span>
-                                </td>
-                                <td>
-                                    {% if lead.lead_products.all %}
-                                        <div class="product-list">
-                                            {% for lead_product in lead.lead_products.all %}
-                                                <span class="badge bg-success me-1 mb-1">{{ lead_product.product.name }}</span>
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        <span class="text-muted">No products</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if lead.lead_parts.all %}
-                                        <div class="parts-list">
-                                            {% for lead_part in lead.lead_parts.all %}
-                                                <span class="badge bg-warning text-dark me-1 mb-1">{{ lead_part.part.name }}</span>
-                                            {% endfor %}
-                                        </div>
-                                    {% else %}
-                                        <span class="text-muted">No parts</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if lead.followup_date %}
-                                        <div class="text-nowrap">
-                                            <i class="fas fa-calendar-alt me-1"></i>{{ lead.followup_date }}
-                                            {% if lead.followup_time %}
-                                                <br><i class="fas fa-clock me-1"></i>{{ lead.followup_time }}
-                                            {% endif %}
-                                        </div>
-                                    {% else %}
-                                        <span class="text-muted">Not set</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="{% url 'hospital_lead_detail' lead.id %}" class="btn btn-sm btn-outline-info">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{% url 'hospital_lead_edit' lead.id %}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(`{{ lead.id }}`, '{{ lead.hospital_name }}')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Mobile Card View with Dropdown -->
-                <div class="d-lg-none">
-                    {% for lead in leads %}
-                        <div class="lead-card border-bottom">
-                            <div class="lead-header d-flex align-items-center justify-content-between p-3" 
-                                 data-bs-toggle="collapse" data-bs-target="#lead-{{ lead.id }}" 
-                                 aria-expanded="false" style="cursor: pointer;">
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-circle me-3">
-                                        {{ lead.hospital_name|first|upper }}
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0">{{ lead.hospital_name }}</h6>
-                                        <small class="text-muted">{{ lead.first_name }} {{ lead.last_name }}</small>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-items-center">
-                                    <span class="badge bg-info text-dark me-2">{{ lead.hospital_type }}</span>
-                                    <i class="fas fa-chevron-down toggle-icon"></i>
-                                </div>
-                            </div>
-                            
-                            <div class="collapse" id="lead-{{ lead.id }}">
-                                <div class="lead-details p-3 pt-0">
-                                    <div class="row g-2">
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-center mb-2">
-                                                <i class="fas fa-hospital text-primary me-2"></i>
-                                                <small class="text-muted me-2">Hospital:</small>
-                                                <span class="fw-bold">{{ lead.hospital_name }}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-center mb-2">
-                                                <i class="fas fa-user text-primary me-2"></i>
-                                                <small class="text-muted me-2">Contact:</small>
-                                                <span>{{ lead.first_name }} {{ lead.last_name }}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        {% if lead.email %}
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-center mb-2">
-                                                <i class="fas fa-envelope text-primary me-2"></i>
-                                                <small class="text-muted me-2">Email:</small>
-                                                <span>{{ lead.email }}</span>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                        
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-center mb-2">
-                                                <i class="fas fa-phone text-primary me-2"></i>
-                                                <small class="text-muted me-2">Phone:</small>
-                                                <span>{{ lead.phone }}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-center mb-2">
-                                                <i class="fas fa-building text-primary me-2"></i>
-                                                <small class="text-muted me-2">Type:</small>
-                                                <span class="badge bg-info text-dark">{{ lead.hospital_type }}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        {% if lead.city or lead.state %}
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-center mb-2">
-                                                <i class="fas fa-map-marker-alt text-primary me-2"></i>
-                                                <small class="text-muted me-2">Location:</small>
-                                                <span>{{ lead.city|default:"" }}{% if lead.city and lead.state %}, {% endif %}{{ lead.state|default:"" }}</span>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                        
-                                        {% if lead.lead_products.all %}
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-start mb-2">
-                                                <i class="fas fa-box text-primary me-2 mt-1"></i>
-                                                <div>
-                                                    <small class="text-muted me-2">Products:</small>
-                                                    <div class="mt-1">
-                                                        {% for lead_product in lead.lead_products.all %}
-                                                            <span class="badge bg-success me-1 mb-1">{{ lead_product.product.name }}</span>
-                                                        {% endfor %}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                        
-                                        {% if lead.lead_parts.all %}
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-start mb-2">
-                                                <i class="fas fa-cog text-primary me-2 mt-1"></i>
-                                                <div>
-                                                    <small class="text-muted me-2">Parts:</small>
-                                                    <div class="mt-1">
-                                                        {% for lead_part in lead.lead_parts.all %}
-                                                            <span class="badge bg-warning text-dark me-1 mb-1">{{ lead_part.part.name }}</span>
-                                                        {% endfor %}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                        
-                                        {% if lead.followup_date %}
-                                        <div class="col-12">
-                                            <div class="detail-item d-flex align-items-start mb-2">
-                                                <i class="fas fa-calendar-alt text-primary me-2 mt-1"></i>
-                                                <div>
-                                                    <small class="text-muted me-2">Follow-up:</small>
-                                                    <div>
-                                                        <span>{{ lead.followup_date }}</span>
-                                                        {% if lead.followup_time %}
-                                                            <br><small class="text-muted">{{ lead.followup_time }}</small>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <!-- Action Buttons -->
-                                    <div class="d-flex gap-2 mt-3">
-                                        <a href="{% url 'hospital_lead_detail' lead.id %}" 
-                                           class="btn btn-info btn-sm flex-fill">
-                                            <i class="fas fa-eye me-1"></i>View
-                                        </a>
-                                        <a href="{% url 'hospital_lead_edit' lead.id %}" 
-                                           class="btn btn-outline-primary btn-sm">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" 
-                                                onclick="confirmDelete(`{{ lead.id }}`, '{{ lead.hospital_name }}')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="p-4">
-                    <div class="text-center text-muted">
-                        <i class="fas fa-inbox fa-3x mb-3"></i>
-                        <h5>No leads found</h5>
-                        {% if search_query %}
-                            <p>No results found for "{{ search_query }}"</p>
-                            <button class="btn btn-outline-primary" onclick="clearSearch()">Clear Search</button>
-                        {% else %}
-                            <p>Start by <a href="{% url 'new_lead' %}">adding your first hospital lead</a></p>
-                        {% endif %}
-                    </div>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-<!-- 
- Statistics Cards 
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ leads|length }}</h4>
-                        <p class="mb-0">Total Leads</p>
-                    </div>
-                    <i class="fas fa-hospital fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ leads|length }}</h4>
-                        <p class="mb-0">This Month</p>
-                    </div>
-                    <i class="fas fa-chart-line fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{% for lead in leads %}{% if lead.followup_date %}1{% endif %}{% endfor %}</h4>
-                        <p class="mb-0">Follow-ups Due</p>
-                    </div>
-                    <i class="fas fa-calendar-check fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ leads|length }}</h4>
-                        <p class="mb-0">Active Leads</p>
-                    </div>
-                    <i class="fas fa-users fa-2x opacity-75"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> -->
-
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirm Delete</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete the lead for "<strong id="hospitalName"></strong>"?</p>
-                <p class="text-danger">This action cannot be undone and will also delete all associated products and parts.</p>
-            </div>
-            <div class="modal-footer">
-                <form id="deleteForm" method="post">
-                    {% csrf_token %}
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Delete Lead</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 
 <style>
-    .avatar-circle {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(45deg, #17a2b8, #138496);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 16px;
+    .dropdown-wrapper {
+        position: relative;
     }
-    
-    .lead-card {
-        transition: all 0.3s ease;
+
+    .dropdown-wrapper .toggle-icon {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #666;
     }
-    
-    .lead-card:hover {
-        background-color: #f8f9fa;
+
+    .view-toggle-btn.active {
+        background-color: #0d6efd !important;
+        color: white !important;
     }
-    
-    .lead-header {
-        transition: background-color 0.2s ease;
-    }
-    
-    .lead-header:hover {
-        background-color: #e9ecef;
-    }
-    
-    .toggle-icon {
-        transition: transform 0.3s ease;
-    }
-    
-    .lead-header[aria-expanded="true"] .toggle-icon {
-        transform: rotate(180deg);
-    }
-    
-    .detail-item {
-        font-size: 14px;
-    }
-    
-    .detail-item i {
-        width: 16px;
-        text-align: center;
-    }
-    
-    .product-list, .parts-list {
-        max-width: 200px;
-    }
-    
-    .badge {
-        font-size: 0.75em;
-    }
-    
-    .btn-group .btn {
-        border-radius: 0.375rem;
-        margin-right: 2px;
-    }
-    
-    .card {
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-    
-    .opacity-75 {
-        opacity: 0.75;
-    }
-    
-    @media (max-width: 576px) {
-        .avatar-circle {
-            width: 35px;
-            height: 35px;
-            font-size: 14px;
-        }
-        
-        .lead-header h6 {
-            font-size: 14px;
-        }
-        
-        .lead-header small {
-            font-size: 12px;
-        }
-        
-        .detail-item {
-            font-size: 13px;
-        }
-        
-        .badge {
-            font-size: 0.7em;
-        }
+
+    .view-toggle-btn {
+        font-size: 13px;
+        padding: 6px 12px;
     }
 </style>
 
+<!-- HEADER -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-0"><i class="fas fa-hospital me-2"></i>Hospital/Clinic Leads</h3>
+                <span class="badge bg-light text-dark mt-1">Total Leads: {{ total_leads }}</span>
+
+            </div>
+
+            <!-- Desktop Buttons -->
+            <div class="d-flex gap-2 d-none d-md-flex">
+                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="collapse" data-bs-target="#searchSection">
+                    Filter <i class="fas fa-filter ms-1"></i>
+                </button>
+
+                <a href="{% url 'new_lead' %}" class="btn btn-light btn-sm">
+                    <i class="fas fa-plus"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE FILTER BUTTON -->
+    <div class="d-md-none p-3">
+        <button class="btn btn-primary w-100" data-bs-toggle="collapse" data-bs-target="#searchSection">
+            Filters <i class="fas fa-filter ms-1"></i>
+        </button>
+    </div>
+
+    <!-- FILTER SECTION -->
+    <div class="collapse" id="searchSection">
+        <div class="card-body bg-light border-bottom">
+            <form method="get" class="row g-3 align-items-center">
+
+                <!-- Hospital Filter -->
+                <div class="col-md-3">
+                    <div class="dropdown-wrapper">
+                        <select name="hospital" class="form-control">
+                            <option value="">Hospital</option>
+                            {% for hospital in hospitals %}
+                            <option value="{{ hospital.id }}"
+                                {% if request.GET.hospital == hospital.id|stringformat:"s" %}selected{% endif %}>
+                                {{ hospital.hospital_name }} - {{ hospital.city }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="dropdown-wrapper">
+                        <select name="lead_source" class="form-control">
+                            <option value="">All</option>
+                            <option value="Customer" 
+                                {% if request.GET.lead_source == "Customer" %}selected{% endif %}>
+                                Customer
+                            </option>
+                            <option value="Lead" 
+                                {% if request.GET.lead_source == "Lead" %}selected{% endif %}>
+                                Lead
+                            </option>
+                        </select>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                </div>
+                <!-- City Filter -->
+                <div class="col-md-3">
+                    <div class="dropdown-wrapper">
+                        <select name="city" class="form-control">
+                            <option value="">City</option>
+                            {% for city in cities %}
+                            <option value="{{ city }}" {% if request.GET.city == city %}selected{% endif %}>
+                                {{ city }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                </div>
+
+                <!-- State Filter -->
+                <div class="col-md-3">
+                    <div class="dropdown-wrapper">
+                        <select name="state" class="form-control">
+                            <option value="">State</option>
+                            {% for state in states %}
+                            <option value="{{ state }}" {% if request.GET.state == state %}selected{% endif %}>
+                                {{ state }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <i class="fas fa-chevron-down toggle-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Search Text -->
+                <div class="col-md-3">
+                    <input type="text" name="q" class="form-control" placeholder="Search..."
+                        value="{{ request.GET.q }}">
+                </div>
+
+                <!-- Buttons -->
+                <div class="col-md-12 d-flex gap-2 mt-1">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i>Search</button>
+                    <a href="{% url 'hospital_leads_list' %}" class="btn btn-outline-danger">
+                        <i class="fas fa-times me-1"></i>Clear Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- VIEW TOGGLE BUTTONS -->
+    <div class="card-body pb-0">
+        <div class="d-flex justify-content-end mb-3">
+            <button id="tableViewBtn" class="btn btn-outline-primary view-toggle-btn me-2">
+                <i class="fas fa-table me-1"></i>Table View
+            </button>
+
+            <button id="cardViewBtn" class="btn btn-outline-primary view-toggle-btn active">
+                <i class="fas fa-id-card me-1"></i>Card View
+            </button>
+        </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="card-body p-0">
+
+        {% if leads %}
+
+        <!-- TABLE VIEW -->
+        <div id="tableView" class="table-responsive" style="display:none;">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Hospital Name</th>
+                        <th>Contact Person</th>
+                        <th>Phone</th>
+                        <th>Type</th>
+                        <th>Products</th>
+                        <th>Parts</th>
+                        <th>Follow-up</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for lead in leads %}
+                    <tr>
+
+                        <!-- Hospital Name -->
+                        <td>
+                            <div class="fw-bold text-primary">{{ lead.hospital_name }}</div>
+                            <small class="text-muted">
+                                {{ lead.city|default:"" }}{% if lead.city and lead.state %}, {% endif %}{{ lead.state|default:"" }}
+                            </small>
+                        </td>
+
+                        <!-- Contact Person -->
+                        <td>
+                            <div>{{ lead.first_name }} {{ lead.last_name }}</div>
+                            {% if lead.email %}
+                            <small class="text-muted">{{ lead.email }}</small>
+                            {% endif %}
+                        </td>
+
+                        <!-- Phone (FIXED CALL + WHATSAPP) -->
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold text-nowrap">{{ lead.phone }}</span>
+
+                                <!-- CALL -->
+                                <a href="tel:{{ lead.phone }}" class="text-primary contact-icon" title="Call">
+                                    <i class="fas fa-phone" style="font-size: 26px;"></i>
+                                </a>
+
+                                <!-- WHATSAPP -->
+                                <a href="https://wa.me/{{ lead.phone }}" target="_blank"
+                                class="text-success contact-icon" title="WhatsApp">
+                                    <i class="fab fa-whatsapp" style="font-size: 26px;"></i>
+                                </a>
+                            </div>
+                        </td>
+
+                        <!-- Type -->
+                        <td>
+                            <span class="badge bg-info text-dark">{{ lead.hospital_type }}</span>
+                        </td>
+
+                        <!-- Products -->
+                        <td>
+                            {% if lead.lead_products.all %}
+                            {% for lead_product in lead.lead_products.all %}
+                            <span class="badge bg-success me-1 mb-1">{{ lead_product.product.name }}</span>
+                            {% endfor %}
+                            {% else %}
+                            <span class="text-muted">No products</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Parts -->
+                        <td>
+                            {% if lead.lead_parts.all %}
+                            {% for lead_part in lead.lead_parts.all %}
+                            <span class="badge bg-warning text-dark me-1 mb-1">{{ lead_part.part.name }}</span>
+                            {% endfor %}
+                            {% else %}
+                            <span class="text-muted">No parts</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Follow-Up -->
+                        <td>
+                            {% if lead.followup_date %}
+                            <div class="text-nowrap">
+                                <i class="fas fa-calendar-alt me-1"></i>{{ lead.followup_date }}
+                                {% if lead.followup_time %}
+                                <br><i class="fas fa-clock me-1"></i>{{ lead.followup_time }}
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">Not set</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Actions -->
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'hospital_lead_detail' lead.id %}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+
+                                <a href="{% url 'hospital_lead_edit' lead.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        onclick="confirmDelete(`{{ lead.id }}`, '{{ lead.hospital_name }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- CARD VIEW (DESKTOP + MOBILE) -->
+        <div id="cardView" class="p-2">
+
+            {% for lead in leads %}
+            <div class="lead-card border rounded p-3 mb-2 shadow-sm">
+
+                <!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+    <div>
+        <h5 class="mb-1 text-primary fw-bold">{{ lead.hospital_name }}</h5>
+        <small class="text-muted">
+            {{ lead.city }}{% if lead.city and lead.state %}, {% endif %}{{ lead.state }}
+        </small>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap">
+
+        <span class="badge px-3 py-2 rounded-pill" 
+              style="background:#d1ecf1; color:#0c5460; font-size:0.85rem;">
+            <i class="fas fa-user-tag me-1"></i>{{ lead.lead_source }}
+        </span>
+
+        <span class="badge px-3 py-2 rounded-pill" 
+              style="background:#e8eaf6; color:#3f51b5; font-size:0.85rem;">
+            <i class="fas fa-hospital me-1"></i>{{ lead.hospital_type }}
+        </span>
+
+    </div>
+</div>
+
+                <!-- Contact Person -->
+                <div class="mt-3">
+                    <strong>Contact:</strong> {{ lead.first_name }} {{ lead.last_name }}
+                </div>
+
+                <!-- Phone + Call + WhatsApp (FIXED) -->
+                <div class="mt-2">
+                    <strong>Phone:</strong>
+                    <div class="d-flex align-items-center gap-3 mt-1">
+                        <span class="fw-bold">{{ lead.phone }}</span>
+
+                        <!-- CALL -->
+                        <a href="tel:{{ lead.phone }}" class="text-primary contact-icon" title="Call">
+                            <i class="fas fa-phone fa-lg" style="font-size: 26px;"></i>
+                        </a>
+
+                        <!-- WHATSAPP -->
+                        <a href="https://wa.me/{{ lead.phone }}" target="_blank"
+                        class="text-success contact-icon" title="WhatsApp">
+                            <i class="fab fa-whatsapp fa-lg" style="font-size: 26px;"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Follow Up -->
+                <div class="mt-2">
+                    <strong>Follow-up:</strong>
+                    {% if lead.followup_date %}
+                        {{ lead.followup_date }}
+                        {% if lead.followup_time %}
+                        <span class="text-muted">({{ lead.followup_time }})</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">Not Set</span>
+                    {% endif %}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-3 d-flex gap-2">
+                    <a href="{% url 'hospital_lead_detail' lead.id %}" 
+                    class="btn btn-info btn-sm flex-fill">
+                        <i class="fas fa-eye me-1"></i> View
+                    </a>
+
+                    <a href="{% url 'hospital_lead_edit' lead.id %}"
+                    class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i>
+                    </a>
+
+                    <button class="btn btn-danger btn-sm"
+                            onclick="confirmDelete(`{{ lead.id }}`, '{{ lead.hospital_name }}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+
+
+        {% else %}
+        <div class="p-4 text-center text-muted">
+            <i class="fas fa-inbox fa-3x mb-3"></i>
+            <h5>No leads found</h5>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- TOGGLE SCRIPT -->
 <script>
-function confirmDelete(leadId, hospitalName) {
-    document.getElementById('hospitalName').textContent = hospitalName;
-    document.getElementById('deleteForm').action = '/leads/hospital/' + leadId + '/delete/';
-    var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    modal.show();
-}
+    const tableBtn = document.getElementById("tableViewBtn");
+    const cardBtn = document.getElementById("cardViewBtn");
+    const tableView = document.getElementById("tableView");
+    const cardView = document.getElementById("cardView");
 
-function clearSearch() {
-    window.location.href = window.location.pathname;
-}
+    // Default: Show Card View
+    cardView.style.display = "block";
+    tableView.style.display = "none";
 
-// Handle collapse events and search functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle lead card collapse events
-    var collapseElements = document.querySelectorAll('.collapse[id^="lead-"]');
-    collapseElements.forEach(function(collapse) {
-        collapse.addEventListener('show.bs.collapse', function() {
-            var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
-            if (header) {
-                header.setAttribute('aria-expanded', 'true');
-            }
-        });
-        
-        collapse.addEventListener('hide.bs.collapse', function() {
-            var header = document.querySelector('[data-bs-target="#' + this.id + '"]');
-            if (header) {
-                header.setAttribute('aria-expanded', 'false');
-            }
-        });
-    });
+    tableBtn.onclick = () => {
+        tableView.style.display = "block";
+        cardView.style.display = "none";
+        tableBtn.classList.add("active");
+        cardBtn.classList.remove("active");
+    };
 
-    // Search toggle functionality
-    const searchToggle = document.getElementById('searchToggle');
-    const searchSection = document.getElementById('searchSection');
-    const searchInput = document.getElementById('searchInput');
-
-    if (searchToggle && searchSection) {
-        searchToggle.addEventListener('click', function() {
-            const bsCollapse = new bootstrap.Collapse(searchSection, {
-                toggle: true
-            });
-        });
-
-        // Focus input when search section is shown
-        searchSection.addEventListener('shown.bs.collapse', function() {
-            if (searchInput) {
-                searchInput.focus();
-            }
-        });
-    }
-
-    // Auto-expand search if there's a search query
-    if (searchInput && searchInput.value.trim() !== '' && searchSection) {
-        const bsCollapse = new bootstrap.Collapse(searchSection, {
-            show: true
-        });
-    }
-});
+    cardBtn.onclick = () => {
+        cardView.style.display = "block";
+        tableView.style.display = "none";
+        cardBtn.classList.add("active");
+        tableBtn.classList.remove("active");
+    };
 </script>
+
 {% endblock %}
+
