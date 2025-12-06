@@ -6,10 +6,10 @@ from .models import Parts
 from .models import Customer
 from .models import Employee
 from .models import Vendor
-from .models import Project
-from .models import Expense
 from .models import Bank
 from .models import TaxType
+from .models import Staff
+from .models import TaskAssign
 
 admin.site.register(HospitalLead)
 admin.site.register(Category)
@@ -18,8 +18,7 @@ admin.site.register(Parts)
 admin.site.register(Customer)
 admin.site.register(Employee)
 admin.site.register(Vendor)
-admin.site.register(Project)
-admin.site.register(Expense)
+
 @admin.register(Bank)
 class BankAdmin(admin.ModelAdmin):
     list_display = ['name', 'is_active']
@@ -39,8 +38,6 @@ class TaxTypeAdmin(admin.ModelAdmin):
         return f"{obj.percentage}%"
     formatted_percentage.short_description = 'Tax Rate'
 
-from .models import *
-
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
     list_display = ['name', 'date_of_birth', 'email', 'phone_number', 'emergency_contact', 'pf_number', 
@@ -50,5 +47,4 @@ class StaffAdmin(admin.ModelAdmin):
 @admin.register(TaskAssign) 
 class TaskAssignAdmin(admin.ModelAdmin):
     list_display = ['assign_date', 'hospital_id', 'staff_id', 'task_type', 'description', 'remarks', 'follow_up_date']
-
 

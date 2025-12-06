@@ -352,132 +352,6 @@ class VendorProduct(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-class Project(models.Model):
-    project_id = models.CharField(
-        max_length=50, 
-        unique=True,
-        validators=[MinLengthValidator(3)],
-        help_text="Enter a unique identifier for this project (e.g., PRJ-001, WEBSITE-2025)"
-    )
-    project_name = models.CharField(
-        max_length=200,
-        validators=[MinLengthValidator(3)],
-        help_text="Enter a descriptive name for your project"
-    )
-    started_date = models.DateField(
-        default=timezone.now,
-        help_text="Select the project start date"
-    )
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='projects')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True, help_text="Is this project currently active?")
-    
-    class Meta:
-        ordering = ['-started_date']
-        verbose_name = "Project"
-        verbose_name_plural = "Projects"
-    
-    def __str__(self):
-        return f"{self.project_id} - {self.project_name}"
-    
-    @property
-    def total_expense_amount(self):
-        """Calculate total expenses for this project"""
-        total = self.expenses.aggregate(total=Sum('amount'))['total']
-        return total if total is not None else 0
-    
-    @property
-    def expense_count(self):
-        """Count of expenses for this project"""
-        return self.expenses.count()
-    
-    def total_expenses(self):
-        """Calculate total expenses - method for backward compatibility"""
-        return self.total_expense_amount
-    
-    @property
-    def paid_expenses(self):
-        """Calculate paid expenses"""
-        paid = self.expenses.filter(status='paid').aggregate(total=Sum('amount'))['total']
-        return paid if paid is not None else 0
-    
-    @property
-    def pending_expenses(self):
-        """Calculate pending expenses"""
-        pending = self.expenses.filter(status='pending').aggregate(total=Sum('amount'))['total']
-        return pending if pending is not None else 0
-
-
-class ExpenseCategory(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        verbose_name_plural = "Expense Categories"
-        ordering = ['name']
-    
-    def __str__(self):
-        return self.name
-
-
-class Expense(models.Model):
-    PAYMENT_TYPES = [
-        ('UPI', 'UPI'),
-        ('Net Banking', 'Net Banking'),
-        ('Cash', 'Cash'),
-        ('Credit Card', 'Credit Card'),
-        ('Debit Card', 'Debit Card'),
-        ('Cheque', 'Cheque'),
-    ]
-    
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('paid', 'Paid'),
-        ('cancelled', 'Cancelled'),
-    ]
-    
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='expenses')
-    expense_number = models.CharField(max_length=20, unique=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    expense_date = models.DateField()
-    category = models.ForeignKey(ExpenseCategory, on_delete=models.SET_NULL, null=True, blank=True)
-    vendor = models.CharField(max_length=200, blank=True)
-    employee_name = models.CharField(max_length=200, blank=True)
-    description = models.TextField()
-    notes = models.TextField(blank=True)
-    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES, default='UPI')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    is_paid = models.BooleanField(default=False)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['-expense_date', '-created_at']
-    
-    def __str__(self):
-        return f"{self.expense_number} - {self.description[:50]}"
-    
-    def save(self, *args, **kwargs):
-        if not self.expense_number:
-            # Generate expense number like EXP-1, EXP-2, etc.
-            last_expense = Expense.objects.order_by('-id').first()
-            if last_expense:
-                last_num = int(last_expense.expense_number.split('-')[1])
-                self.expense_number = f"EXP-{last_num + 1}"
-            else:
-                self.expense_number = "EXP-1"
-        
-        # Update status based on is_paid
-        if self.is_paid:
-            self.status = 'paid'
-        elif self.status == 'paid' and not self.is_paid:
-            self.status = 'pending'
-            
-        super().save(*args, **kwargs)
-
 
 class HospitalLeadParts(models.Model):
     """Model to store parts selected for each hospital lead"""
@@ -508,8 +382,6 @@ class HospitalLeadProducts(models.Model):
     
     def __str__(self):
         return f"{self.hospital_lead.hospital_name} - {self.product.name}"
-
-#quotation
 
 class Bank(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -650,7 +522,6 @@ class QuotationItem(models.Model):
     def __str__(self):
         return f"{self.item_name} - {self.quotation.quotation_number}"
     
-
 class Staff(models.Model):
     name = models.CharField(max_length=100)
     date_of_birth = models.DateField()
@@ -671,7 +542,6 @@ class Staff(models.Model):
     def __str__(self):
         return self.name
     
-
 TASK_TYPES = [
     ("quotation_submitted", "Quotation Submitted"),
     ("payment_follow_up", "Payment follow up"),
@@ -693,5 +563,3 @@ class TaskAssign(models.Model):
     description = models.TextField()
     remarks = models.TextField()
     follow_up_date = models.DateField()
-
-    
