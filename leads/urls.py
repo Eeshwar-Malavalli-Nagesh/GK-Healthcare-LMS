@@ -120,7 +120,7 @@ urlpatterns = [
     path("ajax/vendor-cities/", views.get_vendor_cities, name="get_vendor_cities"),
     path("ajax/vendors-by-city/", views.get_vendors_by_city, name="get_vendors_by_city"),
     path("ajax/vendor-cities/", views.ajax_vendor_cities, name="ajax_vendor_cities"),
-path("ajax/vendors-by-city/", views.ajax_vendors_by_city, name="ajax_vendors_by_city"),
+    path("ajax/vendors-by-city/", views.ajax_vendors_by_city, name="ajax_vendors_by_city"),
     path("tasks/delete/<int:task_id>/", views.delete_task, name="delete_task"),
 
 ]

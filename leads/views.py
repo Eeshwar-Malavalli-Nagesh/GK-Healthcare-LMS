@@ -421,6 +421,13 @@ def hospital_leads_list(request):
             Q(city__icontains=search_query) |
             Q(state__icontains=search_query)
         )
+    total_leads = HospitalLead.objects.count()
+    total_customers = HospitalLead.objects.filter(lead_source="Customer").count()
+    total_normal_leads = HospitalLead.objects.filter(lead_source="Lead").count()
+    # DROPDOWN LIST DATA -------------------------------------
+    hospitals = HospitalLead.objects.all()
+    cities = HospitalLead.objects.exclude(city="").values_list('city', flat=True).distinct()
+    states = HospitalLead.objects.exclude(state="").values_list('state', flat=True).distinct()
 
     # --- For dropdowns (ALL leads, not filtered, or you can use distinct over full table) ---
     base_queryset = HospitalLead.objects.all()
@@ -499,7 +506,6 @@ def get_hospitals(request):
         for h in qs
     ]
     return JsonResponse({'hospitals': hospitals})
-
 
 
 def hospital_lead_detail(request, lead_id):
