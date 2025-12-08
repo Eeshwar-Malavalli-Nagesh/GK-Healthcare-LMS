@@ -22,14 +22,124 @@ from .models import Customer
 from datetime import datetime,timedelta
 import os
 from decimal import Decimal
-
-from .models import Project, Expense, ExpenseCategory
-from .forms import ProjectForm, ExpenseCategoryForm,ExpenseForm
+from datetime import date, timedelta
+from .models import Staff
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from .models import Quotation, QuotationItem, Category, Bank, TaxType
 from .forms import QuotationForm, QuotationItemFormSet, QuotationSearchForm
 from .models import models
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .models import HospitalLead, HospitalLeadParts, HospitalLeadProducts, Category, Product, Parts
+import json
+from django.shortcuts import render, redirect
+from .models import Staff
+from hr.models import Expense, EXPENSE_TYPES
+from django.contrib.auth.decorators import user_passes_test
+
+def edit_expense(request, id):
+    expense = Expense.objects.get(id=id)
+
+    if request.method == "POST":
+        expense.staff_id = request.POST.get("staff")
+        expense.expense_type = request.POST.get("expense_type")
+        expense.amount = request.POST.get("amount")
+        expense.description = request.POST.get("description")
+
+        # Optional: Update Date if editable
+        # expense.created_at = request.POST.get("created_at")
+
+        expense.save()
+        messages.success(request, "Expense updated successfully!")
+        return redirect("staff_expense_list")
+
+    return render(request, "edit_expense.html", {
+        "expense": expense,
+        "staff_list": Staff.objects.all(),
+        "expense_types": EXPENSE_TYPES,
+    })
+
+def delete_expense(request, id):
+    expense = Expense.objects.get(id=id)
+    expense.delete()
+    messages.success(request, "Expense deleted successfully!")
+    return redirect("staff_expense_list")
+
+def add_staff_expense(request):
+    staff_members = Staff.objects.all()
+
+    if request.method == "POST":
+        staff_id = request.POST.get("staff")
+        expense_type = request.POST.get("expense_type")
+        amount = request.POST.get("amount")
+        description = request.POST.get("description")
+        remark = request.POST.get("remark")
+        bill_image = request.FILES.get("bill_image")
+
+        Expense.objects.create(
+            staff_id=staff_id,
+            expense_type=expense_type,
+            amount=amount,
+            description=description,
+            remark=remark,
+            bill_image=bill_image,
+        )
+
+        return redirect("staff_expense_list")
+
+    return render(request, "add_staff_expense.html", {
+        "staff": staff_members,
+        "expense_types": EXPENSE_TYPES,
+    })
+
+
+from django.db.models import Sum
+from datetime import datetime
+
+def staff_expense_list(request):
+
+    expenses = Expense.objects.select_related("staff").order_by("-created_at")
+
+    staff_id = request.GET.get("staff")
+    exp_type = request.GET.get("type")
+    from_date = request.GET.get("from_date")
+    to_date = request.GET.get("to_date")
+
+    # Apply Staff Filter
+    if staff_id:
+        expenses = expenses.filter(staff_id=staff_id)
+
+    # Apply Type Filter
+    if exp_type:
+        expenses = expenses.filter(expense_type=exp_type)
+
+    # Apply Date Range Filter
+    if from_date:
+        expenses = expenses.filter(created_at__date__gte=from_date)
+
+    if to_date:
+        expenses = expenses.filter(created_at__date__lte=to_date)
+
+    # Calculate Total
+    total_expenses = expenses.aggregate(total=Sum("amount"))["total"] or 0
+
+    return render(request, "staff_expense_list.html", {
+        "expenses": expenses,
+        "staff_list": Staff.objects.all(),
+        "expense_types": EXPENSE_TYPES,
+
+        # Selected
+        "selected_staff": staff_id,
+        "selected_type": exp_type,
+        "selected_from": from_date,
+        "selected_to": to_date,
+
+        # Total
+        "total_expenses": total_expenses,
+    })
+
 
 def payment_followup_form(request):
     return render(request, 'payment_followup_form.html')
@@ -55,170 +165,70 @@ def save_payment_followup(request):
             return redirect('payment_followup_form')
     return redirect('payment_followup_form')
 
+from .models import user_password
+
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from .models import user_password
+
 def login_view(request):
+    # Fetch all username & password pairs from DB
+    users = user_password.objects.all()
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+
+        # Try Django authentication
         user = authenticate(request, username=username, password=password)
-        if user is not None:
+
+        if user:
             login(request, user)
             return redirect('dashboard')
-        else:
-            return render(request, 'login.html', {'error': 'Invalid credentials'})
-    return render(request, 'login.html')
 
- 
+        # Custom DB-based authentication
+        elif user_password.objects.filter(user=username, pwd=password).exists():
+            # Store username in session
+            request.session['username'] = username
+            return redirect('dashboard')
+
+        else:
+            return render(request, 'login.html', {
+                'error': 'Invalid username or password!',
+                'users': users
+            })
+
+    return render(request, 'login.html', {'users': users})
+
+
+
 def logout_view(request):
     logout(request)
     return redirect('login')
 
-
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    expenses = Expense.objects.select_related("staff").order_by("-created_at")
+    total_expenses = expenses.aggregate(total=Sum("amount"))["total"] or 0
+    total_customers = Customer.objects.count()
+    total_vendors = Vendor.objects.count()
+    total_leads = HospitalLead.objects.count()
+    total_tasks = TaskAssign.objects.count()
+    total_products = Product.objects.count()
+    total_customers = HospitalLead.objects.filter(lead_source="Customer").count()
+
+    context = {
+        "total_customers": total_customers,
+        "total_vendors": total_vendors,
+        "total_leads": total_leads,
+        "total_tasks": total_tasks,
+        "total_products": total_products,
+        'total_expenses':total_expenses,
+        
+    }
+    return render(request, "dashboard.html", context)
 
 def payment(request):
     return render(request, 'payment.html')
-
-
-#  
-# def new_lead1(request):
-#     if request.method == 'POST':
-#         try:
-#             data = request.POST
-
-#             # List of checkbox options
-#             decision_maker_choices = [
-#                 'Dialysis Technician', 'Nephrologist', 
-#                 'Purchase Department', 'Account Department',
-#                 'Biomedical Department'
-#             ]
-
-#             telecalling_response_choices = [
-#                 'Did not receive', 'Call me later', 'Not interested',
-#                 'Interested in product', 'No more in business', 'Other'
-#             ]
-
-#             # Extract selected checkboxes
-#             decision_maker = [
-#                 choice for choice in decision_maker_choices
-#                 if data.get(f'decision_maker_{choice.lower().replace(" ", "_")}')
-#             ]
-
-#             telecalling_response = [
-#                 choice for choice in telecalling_response_choices
-#                 if data.get(f'telecalling_response_{choice.lower().replace(" ", "_")}')
-#             ]
-
-#             # Create and save the lead
-#             lead = HospitalLead.objects.create(
-#                 hospital_name=data['hospital_name'],
-#                 hospital_type=data['hospital_type'],
-#                 first_name=data['first_name'],
-#                 last_name=data['last_name'],
-#                 phone=data['phone'],
-#                 email=data.get('email'),
-#                 address=data.get('address'),
-#                 city=data.get('city'),
-#                 state=data.get('state'),
-#                 country=data.get('country', 'India'),
-#                 decision_maker=decision_maker,
-#                 telecalling_response=telecalling_response,
-#                 followup_date=data.get('followup_date'),
-#                 followup_time=data.get('followup_time'),
-#                 communication_channel=data.get('communication_channel'),
-#                 promotional_messages=data.get('promotional_messages'),
-#                 remarks=data.get('remarks'),
-#                 created_by=request.user,
-#             )
-
-#             messages.success(request, 'Hospital lead submitted successfully!')
-#             return redirect('new_lead')
-
-#         except Exception as e:
-#             messages.error(request, f'Error submitting form: {str(e)}')
-#             return redirect('new_lead')
-
-#     return render(request, 'new_lead.html')
-
-
-
-
-# def new_lead(request):
-#     # ✅ Get categories grouped by ID
-#     category_ids = Category.objects.values_list('id', flat=True).distinct()
-#     categories = {}
-#     for id in category_ids:
-#         categories[id] = Category.objects.filter(id=id)
-
-#     # ✅ Get all products
-#     products = Product.objects.all()
-
-#     if request.method == 'POST':
-#         try:
-#             data = request.POST
-
-#             # ✅ Handle multiple selected products
-#             products_data = []
-#             for key, value in data.items():
-#                 if key.startswith('products[') and key.endswith('][id]'):
-#                     index = key.split('[')[1].split(']')[0]
-#                     product_id = value
-#                     product_name = data.get(f'products[{index}][name]', '')
-#                     if product_id and product_name:
-#                         products_data.append({
-#                             'id': product_id,
-#                             'name': product_name
-#                         })
-#             print("Received products:", products_data)  # Optional: remove in production
-
-#             # ✅ Handle checkboxes
-#             decision_maker = data.getlist('decision_maker')
-#             telecalling_response = data.getlist('telecalling_response')
-
-#             # ✅ Create lead
-#             lead = HospitalLead.objects.create(
-#                 hospital_name=data.get('hospital_name', '').strip(),
-#                 hospital_type=data.get('hospital_type', '').strip(),
-#                 first_name=data.get('first_name', '').strip(),
-#                 last_name=data.get('last_name', '').strip(),
-#                 phone=data.get('phone', '').strip(),
-#                 email=data.get('email', '').strip(),
-#                 address=data.get('address', '').strip(),
-#                 city=data.get('city', '').strip(),
-#                 state=data.get('state', '').strip(),
-#                 country=data.get('country', 'India').strip(),
-#                 decision_maker=decision_maker,
-#                 telecalling_response=telecalling_response,
-#                 followup_date=data.get('followup_date'),
-#                 followup_time=data.get('followup_time'),
-#                 communication_channel=data.get('communication_channel'),
-#                 promotional_messages=data.get('promotional_messages'),
-#                 remarks=data.get('remarks'),
-#                 created_by=request.user,
-#             )
-
-#             # ✅ Success message
-#             messages.success(request, 'Hospital lead submitted successfully!')
-#             return redirect('new_lead')
-
-#         except Exception as e:
-#             messages.error(request, f'Error submitting form: {str(e)}')
-#             return redirect('new_lead')
-
-#     # ✅ Always pass categories and products for rendering
-#     return render(request, 'new_lead.html', {
-#         'categories': categories,
-#         'products': products
-#     })
-
-# Add this to your views.py file
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from .models import HospitalLead, HospitalLeadParts, HospitalLeadProducts, Category, Product, Parts
-import json
-
 
 def new_lead(request):
     if request.method == 'POST':
@@ -233,7 +243,8 @@ def new_lead(request):
                 lead.hospital_type = request.POST.get('hospital_type_other', 'Other')
             else:
                 lead.hospital_type = hospital_type
-            
+            lead.lead_source = request.POST.get('lead_source', 'Customer')
+
             # Contact information
             lead.first_name = request.POST.get('first_name')
             lead.last_name = request.POST.get('last_name')
@@ -357,15 +368,49 @@ def get_form_context():
     }
     return context
 
+from django.shortcuts import render
+from django.db.models import Q
+from django.http import JsonResponse
+from .models import HospitalLead
+from django.views.decorators.http import require_GET
+
 
 def hospital_leads_list(request):
-    search_query = request.GET.get('q', '').strip()
-    
+    """
+    Show ALL hospital leads (Lead + Customer) with filters:
+    - hospital
+    - lead_source (All / Customer / Lead)
+    - city
+    - state
+    - free-text search 'q'
+    """
+
+    # --- Base queryset (ALL leads) ---
     leads = HospitalLead.objects.all().prefetch_related(
         'lead_parts__part',
         'lead_products__product'
     ).order_by('-created_at')
-    
+
+    # --- Get filter params ---
+    hospital_filter = request.GET.get('hospital', '').strip()
+    city_filter = request.GET.get('city', '').strip()
+    state_filter = request.GET.get('state', '').strip()
+    lead_source_filter = request.GET.get('lead_source', '').strip()
+    search_query = request.GET.get('q', '').strip()
+
+    # --- Apply filters ---
+    if hospital_filter:
+        leads = leads.filter(id=hospital_filter)
+
+    if lead_source_filter:
+        leads = leads.filter(lead_source=lead_source_filter)
+
+    if city_filter:
+        leads = leads.filter(city__iexact=city_filter)
+
+    if state_filter:
+        leads = leads.filter(state__iexact=state_filter)
+
     if search_query:
         leads = leads.filter(
             Q(hospital_name__icontains=search_query) |
@@ -377,10 +422,84 @@ def hospital_leads_list(request):
             Q(state__icontains=search_query)
         )
 
-    return render(request, 'hospital_leads_list.html', {
+    # --- For dropdowns (ALL leads, not filtered, or you can use distinct over full table) ---
+    base_queryset = HospitalLead.objects.all()
+
+    hospitals = base_queryset.order_by('hospital_name')
+
+    cities = sorted(set(
+        c.strip().title()
+        for c in base_queryset.values_list('city', flat=True)
+        if c
+    ))
+
+    states = sorted(set(
+        s.strip().title()
+        for s in base_queryset.values_list('state', flat=True)
+        if s
+    ))
+
+    total_leads = base_queryset.count()
+
+    context = {
         'leads': leads,
-        'search_query': search_query
-    })
+        'hospitals': hospitals,
+        'cities': cities,
+        'states': states,
+        'total_leads': total_leads,
+
+        # Keep selected values for UI
+        'selected_hospital': hospital_filter,
+        'selected_city': city_filter,
+        'selected_state': state_filter,
+        'selected_lead_source': lead_source_filter,
+        'search_query': search_query,
+    }
+
+    return render(request, 'hospital_leads_list.html', context)
+
+
+# ---------- Dependent dropdown AJAX APIs ----------
+
+@require_GET
+def get_cities(request):
+    """
+    Return cities for a given state (for dropdown).
+    URL: /get-cities/?state=Karnataka
+    """
+    state = request.GET.get('state', '').strip()
+    if not state:
+        return JsonResponse({'cities': []})
+
+    qs = HospitalLead.objects.filter(state__iexact=state).values_list('city', flat=True)
+    cities = sorted(set(
+        c.strip().title()
+        for c in qs if c
+    ))
+    return JsonResponse({'cities': cities})
+
+
+@require_GET
+def get_hospitals(request):
+    """
+    Return hospitals for a given city (for dropdown).
+    URL: /get-hospitals/?city=Bengaluru
+    """
+    city = request.GET.get('city', '').strip()
+    if not city:
+        return JsonResponse({'hospitals': []})
+
+    qs = HospitalLead.objects.filter(city__iexact=city).order_by('hospital_name')
+    hospitals = [
+        {
+            'id': h.id,
+            'hospital_name': h.hospital_name,
+            'city': h.city or ''
+        }
+        for h in qs
+    ]
+    return JsonResponse({'hospitals': hospitals})
+
 
 
 def hospital_lead_detail(request, lead_id):
@@ -396,7 +515,6 @@ def hospital_lead_detail(request, lead_id):
     }
     return render(request, 'hospital_lead_detail.html', context)
     
-
 def hospital_lead_edit(request, pk):
     lead = get_object_or_404(HospitalLead, pk=pk)
     
@@ -420,7 +538,7 @@ def hospital_lead_edit(request, pk):
             lead.city = request.POST.get('city')
             lead.state = request.POST.get('state')
             lead.country = request.POST.get('country', 'India')
-            
+            lead.lead_source = request.POST.get('lead_source')
             # Decision maker information (handle multiple selections)
             decision_makers = request.POST.getlist('decision_maker')
             if 'Other' in decision_makers:
@@ -562,7 +680,7 @@ def get_edit_form_context(lead):
         "lead_products": lead_products,
         "lead_parts": lead_parts,
     }
-# Delete View
+
 def delete_hospital_lead(request, pk):
     lead = get_object_or_404(HospitalLead, pk=pk)
 
@@ -634,7 +752,6 @@ def category_list(request):
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'category_list.html', {'page_obj': page_obj})
-
 
 def add_category(request):
     if request.method == 'POST':
@@ -720,6 +837,7 @@ def add_product(request):
     
     categories = Category.objects.all()
     return render(request, 'add_product.html', {'categories': categories})
+    
 def edit_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     
@@ -789,7 +907,6 @@ def delete_product(request, product_id):
     
     # For GET request, show confirmation page
     return render(request, 'delete_product_confirm.html', {'product': product})
-# Updated Parts-related view functions to add to your views.py
 
 def parts_list(request):
     parts_list = Parts.objects.all()
@@ -913,8 +1030,7 @@ def delete_parts(request, parts_id):
 def add_customer(request):
     """Display the add customer form"""
     return render(request, 'add_customer.html')
-
-
+ 
 def save_customer(request):
     """Save customer data to database"""
     if request.method == 'POST':
@@ -945,53 +1061,78 @@ def save_customer(request):
     return redirect('add_customer')
 
 
+@user_passes_test(lambda u: u.is_superuser)
 def customer_list(request):
-    """Display list of all customers with search and filter functionality"""
-    customers = Customer.objects.all()
+    """Display only CUSTOMER leads with filters."""
 
-    query = request.GET.get('q', '')            # query = hospital_name 1 - srm - chennai
-    query_url =  urllib.parse.quote(query)      # query_url = 'hospital_name%201%20-%20srm%20-%20chennai'
-    filter_type = query_url.split('%20')[0]     # filter_type = [hospital_name, 1, -, srm, -, chennai]
-    
-    if filter_type == 'hospital_name':
-        hospitals = HospitalLead.objects.filter(id=query_url.split('%20')[1])
-        hospital_leads = HospitalLead.objects.filter(id=query_url.split('%20')[1])
-    elif filter_type == 'city':
-        hospitals = HospitalLead.objects.filter(city=query_url.split('%20')[1])
-        hospital_leads = HospitalLead.objects.filter(city=query_url.split('%20')[1])
-    elif filter_type == 'state':
-        hospitals = HospitalLead.objects.filter(state=query_url.split('%20')[1])
-        hospital_leads = HospitalLead.objects.filter(state=query_url.split('%20')[1])
+    # Base queryset → ONLY CUSTOMERS
+    base_queryset = HospitalLead.objects.filter(
+        lead_source="Customer"
+    ).order_by('-created_at')
+
+    # Get Filters
+    selected_hospital = request.GET.get("hospital")
+    selected_city = request.GET.get("city")
+    selected_state = request.GET.get("state")
+    search_term = request.GET.get("q", "").strip()
+
+    hospital_leads = base_queryset  # Start with all customers
+
+    # Apply State Filter
+    if selected_state:
+        hospital_leads = hospital_leads.filter(state__iexact=selected_state)
+
+    # Apply City Filter
+    if selected_city:
+        hospital_leads = hospital_leads.filter(city__iexact=selected_city)
+
+    # Apply Hospital Filter
+    if selected_hospital:
+        hospital_leads = hospital_leads.filter(id=selected_hospital)
+
+    # Apply Search Filter
+    if search_term:
+        hospital_leads = hospital_leads.filter(
+            Q(hospital_name__icontains=search_term) |
+            Q(first_name__icontains=search_term) |
+            Q(last_name__icontains=search_term) |
+            Q(city__icontains=search_term) |
+            Q(state__icontains=search_term)
+        )
+
+    # Dropdown lists depend on state/city filters
+    # States always from all customers
+    states = sorted(set(
+        base_queryset.values_list("state", flat=True)
+    ))
+
+    # Cities depend on selected_state
+    if selected_state:
+        cities = sorted(set(
+            base_queryset.filter(state=selected_state).values_list("city", flat=True)
+        ))
     else:
-        hospital_leads = HospitalLead.objects.all().order_by('-created_at')
-        hospitals = HospitalLead.objects.all()
+        cities = sorted(set(base_queryset.values_list("city", flat=True)))
 
-    
-    cities = set(HospitalLead.objects.values_list('city', flat=True))
-    # This returns all unique cities as a set (the cities will not be repeated more than once)
-    cities = [city.strip().title() for city in cities if city != '']
-    '''Return a list of non-empty cities (if city != '') with surrounding whitespace removed (.strip()).
-    title() - Capitalizes the first letter of every word.'''
-    cities = sorted(set(cities))   # Sort the cities in ascending order
-    
-    states_list = HospitalLead.objects.values_list('state', flat=True) 
-    states = sorted(set([state.strip().title() for state in states_list if state != '']))
-    
-    # Pagination
-    paginator = Paginator(customers, 5)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number) 
+    # Hospitals depend on selected_city
+    if selected_city:
+        hospitals = base_queryset.filter(city=selected_city)
+    else:
+        hospitals = base_queryset
 
-    # RETURN ALL DATA TO TEMPLATE
-    return render(request, 'customer_list_1.html', {
-        'customers': page_obj,
-        'states': states,
-        'cities': cities,
-        'total_customers': Customer.objects.count(),
-        'hospital_leads': hospital_leads,     # ✅ NOW AVAILABLE IN TEMPLATE
-        'hospitals':hospitals,
+    return render(request, "customer_list_1.html", {
+        "hospital_leads": hospital_leads,
+        "hospitals": hospitals,
+        "states": states,
+        "cities": cities,
+        "total_customers": base_queryset.count(),
+
+        # Selected filters for UI
+        "selected_state": selected_state,
+        "selected_city": selected_city,
+        "selected_hospital": selected_hospital,
+        "search_term": search_term,
     })
-
 
 def customer_detail(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
@@ -1003,7 +1144,6 @@ def customer_detail(request, customer_id):
         'employees': employees,
         'customer_products': customer_products
     })
-
 
 def edit_customer(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
@@ -1033,7 +1173,6 @@ def edit_customer(request, customer_id):
 
     return render(request, 'edit_customer.html', {'customer': customer})
 
-
 def delete_customer(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
 
@@ -1048,8 +1187,6 @@ def delete_customer(request, customer_id):
             return redirect('customer_list')
 
     return render(request, 'delete_customer.html', {'customer': customer})
-
-
 
 def add_employee(request, customer_id):
     """Add new employee linked to a customer"""
@@ -1111,7 +1248,6 @@ def edit_employee(request, employee_id):
         'is_edit': True
     })
 
-
 def delete_employee(request, employee_id):
     """Delete employee"""
     employee = get_object_or_404(Employee, id=employee_id)
@@ -1128,7 +1264,6 @@ def delete_employee(request, employee_id):
             return redirect('customer_detail', customer_id=customer_id)
 
     return render(request, 'delete_employee.html', {'employee': employee})
-
 
 def add_customer_product(request, customer_id):
    customer = get_object_or_404(Customer, id=customer_id)
@@ -1217,10 +1352,8 @@ def delete_customer_product(request, product_id):
    messages.success(request, f'Product "{product_name}" deleted successfully!')
    return redirect('customer_detail', customer_id=customer_id)
 
-# Add these imports to your existing views.py file
 from .models import Vendor, VendorEmployee, VendorProduct
 
-# Vendor Views
 def add_vendor(request):
     """Display the add vendor form"""
     return render(request, 'add_vendor.html')
@@ -1254,48 +1387,102 @@ def save_vendor(request):
 
     return redirect('add_vendor')
 
-def vendor_list(request):
-    """Display list of all vendors with search and filter functionality"""
-    vendors = Vendor.objects.all()
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.core.paginator import Paginator
 
-    # Search
-    search_query = request.GET.get('search', '')
-    if search_query:
+def vendor_list(request):
+
+    # Get selected values
+    selected_state = request.GET.get("state", "").strip()
+    selected_city = request.GET.get("city", "").strip()
+    selected_vendor = request.GET.get("vendor", "").strip()
+    search = request.GET.get("search", "").strip()
+
+    # Base Query
+    vendors = Vendor.objects.all().order_by("-created_at")
+
+    # ---------------------------
+    # 1️⃣ STATE LIST
+    # ---------------------------
+    raw_states = Vendor.objects.exclude(state__isnull=True).exclude(state="") \
+                    .values_list("state", flat=True).distinct()
+    states = sorted({ s.strip().title() for s in raw_states })
+
+    # ---------------------------
+    # 2️⃣ CITY LIST (Depends on State)
+    # ---------------------------
+    if selected_state:
+        raw_cities = Vendor.objects.filter(state__iexact=selected_state) \
+                        .exclude(city__isnull=True).exclude(city="") \
+                        .values_list("city", flat=True).distinct()
+    else:
+        raw_cities = Vendor.objects.exclude(city__isnull=True).exclude(city="") \
+                        .values_list("city", flat=True).distinct()
+
+    cities = sorted({ c.strip().title() for c in raw_cities })
+
+    # ---------------------------
+    # 3️⃣ Apply Filters
+    # ---------------------------
+    if selected_state:
+        vendors = vendors.filter(state__iexact=selected_state)
+
+    if selected_city:
+        vendors = vendors.filter(city__iexact=selected_city)
+
+    if selected_vendor:
+        vendors = vendors.filter(id=selected_vendor)
+
+    if search:
         vendors = vendors.filter(
-            Q(vendor_id__icontains=search_query) |
-            Q(vendor_name__icontains=search_query) |
-            Q(company_name__icontains=search_query) |
-            Q(phone_number__icontains=search_query) |
-            Q(email__icontains=search_query) |
-            Q(city__icontains=search_query)
+            Q(vendor_id__icontains=search) |
+            Q(vendor_name__icontains=search) |
+            Q(company_name__icontains=search) |
+            Q(phone_number__icontains=search) |
+            Q(email__icontains=search)
         )
 
-    # Filters
-    state_filter = request.GET.get('state', '')
-    if state_filter:
-        vendors = vendors.filter(state__icontains=state_filter)
+    # ---------------------------
+    # 4️⃣ Vendor list (depends on State+City)
+    # ---------------------------
+    if selected_city:
+        vendors_all = Vendor.objects.filter(city__iexact=selected_city).order_by("vendor_name")
+    elif selected_state:
+        vendors_all = Vendor.objects.filter(state__iexact=selected_state).order_by("vendor_name")
+    else:
+        vendors_all = Vendor.objects.all().order_by("vendor_name")
 
-    city_filter = request.GET.get('city', '')
-    if city_filter:
-        vendors = vendors.filter(city__icontains=city_filter)
-
-    states = Vendor.objects.exclude(state__isnull=True).exclude(state='').values_list('state', flat=True).distinct().order_by('state')
-    cities = Vendor.objects.exclude(city__isnull=True).exclude(city='').values_list('city', flat=True).distinct().order_by('city')
-
+    # ---------------------------
+    # Pagination
+    # ---------------------------
     paginator = Paginator(vendors, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(request.GET.get("page"))
 
-    return render(request, 'vendor_list.html', {
-        'vendors': page_obj,
-        'search_query': search_query,
-        'state_filter': state_filter,
-        'city_filter': city_filter,
-        'states': states,
-        'cities': cities,
-        'total_vendors': Vendor.objects.count(),
+    return render(request, "vendor_list.html", {
+        "vendors": page_obj,
+        "states": states,
+        "cities": cities,
+        "vendors_all": vendors_all,
+
+        "selected_state": selected_state,
+        "selected_city": selected_city,
+        "selected_vendor": selected_vendor,
+        "search_query": search,
+
+        "total_vendors": Vendor.objects.count(),
     })
 
+def get_vendor_cities(request):
+    state = request.GET.get("state", "")
+    cities = Vendor.objects.filter(state__iexact=state).values_list("city", flat=True).distinct()
+    return JsonResponse({"cities": sorted(list(cities))})
+
+def get_vendors_by_city(request):
+    city = request.GET.get("city", "")
+    vendors = Vendor.objects.filter(city__iexact=city).values("id", "vendor_name", "company_name")
+    return JsonResponse({"vendors": list(vendors)})
 
 def vendor_detail(request, vendor_id):
     vendor = get_object_or_404(Vendor, id=vendor_id)
@@ -1336,7 +1523,6 @@ def edit_vendor(request, vendor_id):
 
     return render(request, 'edit_vendor.html', {'vendor': vendor})
 
-
 def delete_vendor(request, vendor_id):
     vendor = get_object_or_404(Vendor, id=vendor_id)
 
@@ -1352,7 +1538,6 @@ def delete_vendor(request, vendor_id):
 
     return render(request, 'delete_vendor.html', {'vendor': vendor})
 
-# Vendor Employee Views
 def add_vendor_employee(request, vendor_id):
     """Add new employee linked to a vendor"""
     vendor = get_object_or_404(Vendor, id=vendor_id)
@@ -1429,8 +1614,6 @@ def delete_vendor_employee(request, employee_id):
             return redirect('vendor_detail', vendor_id=vendor_id)
 
     return render(request, 'delete_vendor_employee.html', {'employee': employee})
-
-# Vendor Product Views
 
 def add_vendor_product(request, vendor_id):
     vendor = get_object_or_404(Vendor, id=vendor_id)
@@ -1520,7 +1703,6 @@ def delete_vendor_product(request, product_id):
     messages.success(request, f'Product "{product_name}" deleted successfully!')
     return redirect('vendor_detail', vendor_id=vendor_id)
 
-
 def generate_report(request):
     """Main reports dashboard view"""
     return render(request, 'generate_report.html')
@@ -1534,7 +1716,6 @@ def installation_report(request):
     }
     return render(request, 'installation_report.html', context)
 
-
 def service_report(request):
     """Service reports view"""
     # Add your service report logic here
@@ -1543,7 +1724,6 @@ def service_report(request):
         'title': 'Service Reports'
     }
     return render(request, 'service_report.html', context)
-
 
 def inspection_report(request):
     """Inspection reports view"""
@@ -1554,7 +1734,6 @@ def inspection_report(request):
     }
     return render(request, 'inspection_report.html', context)
 
- 
 def incident_report(request):
     """Incident reports view"""
     # Add your incident report logic here
@@ -1564,8 +1743,6 @@ def incident_report(request):
     }
     return render(request, 'incident_report.html', context)
 
-
- 
 def create_quotation(request):
     """Create a new quotation"""
     if request.method == 'POST':
@@ -1615,7 +1792,6 @@ def create_quotation(request):
     }
     return render(request, 'quotation_create.html', context)
 
- 
 def quotation_detail(request, quotation_id):
     """View quotation details"""
     quotation = get_object_or_404(Quotation, id=quotation_id)
@@ -1627,7 +1803,6 @@ def quotation_detail(request, quotation_id):
         'title': f'Quotation - {quotation.quotation_number}'
     }
     return render(request, 'quotation_detail.html', context)
-
  
 def edit_quotation(request, quotation_id):
     """Edit existing quotation"""
@@ -1658,7 +1833,6 @@ def edit_quotation(request, quotation_id):
     }
     return render(request, 'quotation_create.html', context)
 
- 
 def quotation_list(request):
     """List all quotations with search and filter"""
     search_form = QuotationSearchForm(request.GET)
@@ -1695,7 +1869,6 @@ def quotation_list(request):
     }
     return render(request, 'quotation_list.html', context)
 
- 
 def quotation_report(request):
     """Quotation reports view"""
     # Get filter parameters
@@ -1763,7 +1936,6 @@ def quotation_report(request):
     }
     return render(request, 'quotation_report.html', context)
 
- 
 def delete_quotation(request, quotation_id):
     """Delete quotation"""
     quotation = get_object_or_404(Quotation, id=quotation_id)
@@ -1780,7 +1952,6 @@ def delete_quotation(request, quotation_id):
     }
     return render(request, 'quotation_delete.html', context)
 
- 
 def ajax_calculate_totals(request):
     """AJAX endpoint to calculate totals"""
     if request.method == 'POST':
@@ -1809,7 +1980,6 @@ def ajax_calculate_totals(request):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
- 
 def purchase_order_report(request):
     """Purchase order reports view"""
     # Add your purchase order report logic here
@@ -1819,7 +1989,6 @@ def purchase_order_report(request):
     }
     return render(request, 'purchase_order_report.html', context)
 
- 
 def delivery_challan_report(request):
     """Delivery challan reports view"""
     # Add your delivery challan report logic here
@@ -1829,256 +1998,42 @@ def delivery_challan_report(request):
     }
     return render(request, 'delivery_challan_report.html', context)
 
-#view_report
-
- 
 def view_report(request):
     """Main reports dashboard view"""
     return render(request, 'view_reports.html')
 
- 
-def expense_dashboard(request):
-    """Main expense dashboard showing all projects"""
-    try:
-        # Filter projects by current user and active status
-        projects = Project.objects.filter(
-            created_by=request.user, 
-            is_active=True
-        ).order_by('-created_at')
-        
-        # Calculate statistics for each project
-        projects_with_stats = []
-        for project in projects:
-            project.calculated_total = project.total_expense_amount
-            project.calculated_paid = project.paid_expenses
-            project.calculated_pending = project.pending_expenses
-            project.calculated_count = project.expense_count
-            projects_with_stats.append(project)
-        
-        # Overall statistics
-        total_projects = projects.count()
-        total_expenses = sum(p.calculated_total for p in projects_with_stats)
-        total_paid = sum(p.calculated_paid for p in projects_with_stats)
-        total_pending = sum(p.calculated_pending for p in projects_with_stats)
-        
-        context = {
-            'projects': projects_with_stats,
-            'total_projects': total_projects,
-            'total_expenses': total_expenses,
-            'total_paid': total_paid,
-            'total_pending': total_pending,
-        }
-        
-        return render(request, 'expenses/expense_dashboard.html', context)
-        
-    except Exception as e:
-        messages.error(request, f'Error loading dashboard: {str(e)}')
-        return render(request, 'expenses/expense_dashboard.html', {'projects': []})
-
- 
-def add_project(request):
-    if request.method == 'POST':
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            project = form.save(commit=False)
-            project.created_by = request.user
-            project.save()
-            messages.success(request, 'Project created successfully!')
-            return redirect('expense_dashboard')
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = ProjectForm()
-
-    return render(request, 'expenses/add_project.html', {'form': form})
-
-
-
-
- 
-def project_detail(request, project_id):
-    """Project detail page showing expenses"""
-    try:
-        project = get_object_or_404(Project, id=project_id, created_by=request.user)
-        expenses = project.expenses.all()
-        
-        # Filter expenses
-        search_query = request.GET.get('search', '')
-        status_filter = request.GET.get('status', '')
-        
-        if search_query:
-            expenses = expenses.filter(
-                Q(description__icontains=search_query) |
-                Q(vendor__icontains=search_query) |
-                Q(expense_number__icontains=search_query)
-            )
-        
-        if status_filter:
-            expenses = expenses.filter(status=status_filter)
-        
-        # Pagination
-        paginator = Paginator(expenses, 10)
-        page_number = request.GET.get('page')
-        expenses = paginator.get_page(page_number)
-        
-        # Calculate totals
-        total_expenses = project.expenses.aggregate(
-            total=Sum('amount'),
-            paid=Sum('amount', filter=Q(status='paid')),
-            pending=Sum('amount', filter=Q(status='pending'))
-        )
-        
-        # Handle None values
-        for key, value in total_expenses.items():
-            if value is None:
-                total_expenses[key] = 0
-        
-        context = {
-            'project': project,
-            'expenses': expenses,
-            'search_query': search_query,
-            'status_filter': status_filter,
-            'total_expenses': total_expenses,
-        }
-        
-        return render(request, 'expenses/project_details.html', context)
-        
-    except Exception as e:
-        messages.error(request, f'Error loading project details: {str(e)}')
-        return redirect('expense_dashboard')
-
-
- 
-def add_expense(request, project_id):
-    """Add expense to a project"""
-    project = get_object_or_404(Project, id=project_id, created_by=request.user)
-    
-    if request.method == 'POST':
-        form = ExpenseForm(request.POST)
-        if form.is_valid():
-            try:
-                expense = form.save(commit=False)
-                expense.project = project
-                expense.created_by = request.user
-                expense.save()
-                messages.success(request, f'Expense "{expense.description[:30]}..." added successfully!')
-                return redirect('project_detail', project_id=project.id)
-            except Exception as e:
-                messages.error(request, f'Error adding expense: {str(e)}')
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = ExpenseForm()
-    
-    context = {
-        'form': form,
-        'project': project
-    }
-    return render(request, 'expenses/add_expense.html', context)
-
-def edit_project(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-    
-    if request.method == 'POST':
-        form = ProjectForm(request.POST, instance=project)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Project updated successfully!')
-            return redirect('project_detail', project_id=project.id)
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = ProjectForm(instance=project)
-    
-    return render(request, 'expenses/edit_project.html', {
-        'project': project,
-        'form': form
-    })
-
-def delete_project(request, project_id):
-    if request.method == 'POST':
-        project = get_object_or_404(Project, id=project_id)
-        project.delete()
-        messages.success(request, f'Project "{project.project_name}" deleted successfully.')
-    return redirect('dashboard')  # or wherever you want to redirect
-
-
- 
-def edit_expense(request, expense_id):
-    """Edit an expense"""
-    expense = get_object_or_404(Expense, id=expense_id, created_by=request.user)
-    
-    if request.method == 'POST':
-        form = ExpenseForm(request.POST, instance=expense)
-        if form.is_valid():
-            try:
-                form.save()
-                messages.success(request, 'Expense updated successfully!')
-                return redirect('project_detail', project_id=expense.project.id)
-            except Exception as e:
-                messages.error(request, f'Error updating expense: {str(e)}')
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        form = ExpenseForm(instance=expense)
-    
-    context = {
-        'form': form,
-        'expense': expense,
-        'project': expense.project
-    }
-    return render(request, 'expenses/edit_expense.html', context)
-
-
- 
-def view_expense(request, expense_id):
-    """View expense details"""
-    expense = get_object_or_404(Expense, id=expense_id, created_by=request.user)
-    
-    context = {
-        'expense': expense,
-        'project': expense.project
-    }
-    return render(request, 'expenses/view_expense.html', context)
-
-
- 
-def delete_expense(request, expense_id):
-    """Delete an expense"""
-    expense = get_object_or_404(Expense, id=expense_id, created_by=request.user)
-    project_id = expense.project.id
-    
-    if request.method == 'POST':
-        try:
-            expense.delete()
-            messages.success(request, 'Expense deleted successfully!')
-        except Exception as e:
-            messages.error(request, f'Error deleting expense: {str(e)}')
-    
-    return redirect('project_detail', project_id=project_id)
-
-
 from .models import *
+from django.shortcuts import render, redirect
+from .models import Staff
 
- 
 def add_staff(request):
     """Add new employee (general, not linked to customer/vendor)"""
+
     if request.method == 'POST':
+
         name = request.POST.get('name')
-        date_of_birth = request.POST.get('dob')
-        email = request.POST.get('email')
         phone_number = request.POST.get('phone_number')
-        emergency_contact = request.POST.get('emergency_contact')
-        pf_number = request.POST.get('pf_number')
-        bank_name = request.POST.get('bank_name')
-        bank_account_number = request.POST.get('bank_account_number')
-        ifsc_code = request.POST.get('ifsc_code')
-        pan_number = request.POST.get('pan_number')
-        mother_name = request.POST.get('mother_name')
-        father_name = request.POST.get('father_name')
-        address = request.POST.get('address')
-        aadhar_number = request.POST.get('aadhar_number')
-        upload_photo = request.FILES.get('upload_photo')
+
+        # Required fields validation
+        if not name or not phone_number:
+            return render(request, 'add_staff.html', {
+                'error': "Name and Phone Number are required."
+            })
+
+        # Optional fields
+        date_of_birth = request.POST.get('dob') or None
+        email = request.POST.get('email') or None
+        emergency_contact = request.POST.get('emergency_contact') or None
+        pf_number = request.POST.get('pf_number') or None
+        bank_name = request.POST.get('bank_name') or None
+        bank_account_number = request.POST.get('bank_account_number') or None
+        ifsc_code = request.POST.get('ifsc_code') or None
+        pan_number = request.POST.get('pan_number') or None
+        mother_name = request.POST.get('mother_name') or None
+        father_name = request.POST.get('father_name') or None
+        address = request.POST.get('address') or None
+        aadhar_number = request.POST.get('aadhar_number') or None
+        upload_photo = request.FILES.get('upload_photo') or None
 
         Staff.objects.create(
             name=name,
@@ -2098,13 +2053,83 @@ def add_staff(request):
             upload_photo=upload_photo
         )
 
-
-        return render('add_staff.html', {'success': f'Staff successfully added!'})  # Redirect to appropriate page
+        return render(request, 'add_staff.html', {
+            'success': f'Staff "{name}" successfully added!'
+        })
 
     return render(request, 'add_staff.html')
 
- 
-def assign_task(request):
+def edit_staff(request, staff_id):
+    """Edit existing staff record"""
+    staff = get_object_or_404(Staff, id=staff_id)
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        phone_number = request.POST.get("phone_number")
+        dob = request.POST.get("dob")
+
+        if not name or not phone_number or not dob:
+            messages.error(request, "Name, Phone Number and Date of Birth are required.")
+            return render(request, "edit_staff.html", {"staff": staff})
+
+        # Optional fields
+        email = request.POST.get("email") or None
+        emergency_contact = request.POST.get("emergency_contact") or None
+        pf_number = request.POST.get("pf_number") or None
+        bank_name = request.POST.get("bank_name") or None
+        bank_account_number = request.POST.get("bank_account_number") or None
+        ifsc_code = request.POST.get("ifsc_code") or None
+        pan_number = request.POST.get("pan_number") or None
+        mother_name = request.POST.get("mother_name") or None
+        father_name = request.POST.get("father_name") or None
+        address = request.POST.get("address") or None
+        aadhar_number = request.POST.get("aadhar_number") or None
+        upload_photo = request.FILES.get("upload_photo")
+
+        # Update fields
+        staff.name = name
+        staff.phone_number = phone_number
+        staff.date_of_birth = dob
+        staff.email = email
+        staff.emergency_contact = emergency_contact
+        staff.pf_number = pf_number
+        staff.bank_name = bank_name
+        staff.bank_account_number = bank_account_number
+        staff.ifsc_code = ifsc_code
+        staff.pan_number = pan_number
+        staff.mother_name = mother_name
+        staff.father_name = father_name
+        staff.address = address
+        staff.aadhar_number = aadhar_number
+
+        # Only replace photo if new one uploaded
+        if upload_photo:
+            staff.upload_photo = upload_photo
+
+        staff.save()
+
+        messages.success(request, f'Staff "{staff.name}" updated successfully.')
+        return redirect("manage_staff")
+
+    # GET – show edit form with existing data
+    return render(request, "edit_staff.html", {"staff": staff})
+
+from django.views.decorators.http import require_POST
+
+def view_staff(request, staff_id):
+    staff = get_object_or_404(Staff, id=staff_id)
+    return render(request, "view_staff.html", {"staff": staff})
+
+@require_POST
+def delete_staff(request, staff_id):
+    """Delete staff record"""
+    staff = get_object_or_404(Staff, id=staff_id)
+    name = staff.name
+    staff.delete()
+    messages.success(request, f'Staff "{name}" deleted successfully.')
+    return redirect("manage_staff")
+
+def assign_task1(request):
     """Assign task to employee"""
 
     if request.method == 'POST':
@@ -2156,54 +2181,256 @@ def assign_task(request):
     return render(request, 'assign_task.html', {'staff': staff, 'hospitals': hospitals,
                                                 'cities': cities, 'states': states})
 
+def delete_task(request, task_id):
+    task = get_object_or_404(TaskAssign, id=task_id)
+    task.delete()
+    messages.success(request, "Task deleted successfully!")
+    return redirect("manage_task")
+
+
+from django.contrib import messages
+from django.shortcuts import redirect
+
+def assign_task(request):
+    if request.method == 'POST':
+
+        assign_date = request.POST.get('assign_date')
+        hospital_id = request.POST.get('hospital_id')
+        staff_id = request.POST.get('staff_id')
+        task_type = request.POST.get('task_type')
+        description = request.POST.get('description')
+        remarks = request.POST.get('remarks')
+        follow_up_date = request.POST.get('follow_up_date')
+
+        TaskAssign.objects.create(
+            assign_date=assign_date,
+            hospital_id=HospitalLead.objects.get(id=hospital_id),
+            staff_id=Staff.objects.get(id=staff_id),
+            task_type=task_type,
+            description=description,
+            remarks=remarks,
+            follow_up_date=follow_up_date
+        )
+
+        # success message (NOT shown on same page)
+        messages.success(request, "Task assigned successfully!")
+
+        # Return empty response for frontend JS
+        return JsonResponse({"success": True})
+
+    # Page load
+    cities_list = HospitalLead.objects.values_list('city', flat=True)
+    cities = sorted({c.strip().title() for c in cities_list if c})
+
+    states_list = HospitalLead.objects.values_list('state', flat=True)
+    states = sorted({s.strip().title() for s in states_list if s})
+
+    return render(request, 'assign_task.html', {
+        "staff": Staff.objects.all(),
+        "hospitals": HospitalLead.objects.all(),
+        "cities": cities,
+        "states": states
+    })
+
+
+
+def manage_staff(request):
+    selected_staff = request.GET.get("staff", "")
+
+    if selected_staff:
+        staff = Staff.objects.filter(id=selected_staff)
+    else:
+        staff = Staff.objects.all()
+
+    return render(request, "manage_staff.html", {
+        "staff": staff,
+        "selected_staff": selected_staff,
+        "staff_list": Staff.objects.all(),  # 🔥 for dropdown
+    })
+
+from django.shortcuts import render
+from .models import TaskAssign, Staff, HospitalLead
 import urllib.parse
 
- 
 def manage_task(request):
 
-    query = request.GET.get('q', '')            # query = hospital_name 1 - srm - chennai
-    query_url =  urllib.parse.quote(query)      # query_url = 'hospital_name%201%20-%20srm%20-%20chennai'
-    filter_type = query_url.split('%20')[0]     # filter_type = [hospital_name, 1, -, srm, -, chennai]
-    
-    if filter_type == 'hospital_name':
-        tasks = TaskAssign.objects.filter(hospital_id=query_url.split('%20')[1])
-        staff = Staff.objects.all()
-        hospitals = HospitalLead.objects.all()
-    elif filter_type == 'task_type':
-        tasks = TaskAssign.objects.filter(task_type = query_url.split('%20',1)[1])
-        staff = Staff.objects.all()
-        hospitals = HospitalLead.objects.all()
-    elif filter_type == 'city':
-        tasks = TaskAssign.objects.filter(hospital_id__city=query_url.split('%20')[1])  # foreignkeyfield__fieldname
-        staff = Staff.objects.all()
-        hospitals = HospitalLead.objects.all()
-    elif filter_type == 'state':
-        tasks = TaskAssign.objects.filter(hospital_id__state=query_url.split('%20')[1]) 
-        staff = Staff.objects.all()
-        hospitals = HospitalLead.objects.all()
+    # Base queryset
+    tasks = TaskAssign.objects.all()
+
+    # -------------------------------
+    # FILTER PARAMETERS
+    # -------------------------------
+    selected_state = request.GET.get("state", "")
+    selected_city = request.GET.get("city", "")
+    selected_hospital = request.GET.get("hospital", "")
+    selected_staff = request.GET.get("staff", "")
+    selected_task_type = request.GET.get("task_type", "")
+
+    # -------------------------------
+    # FILTER BY STATE
+    # -------------------------------
+    if selected_state:
+        tasks = tasks.filter(hospital_id__state__iexact=selected_state)
+
+    # CITY LIST inside selected state
+    if selected_state:
+        cities = HospitalLead.objects.filter(state__iexact=selected_state)\
+                .values_list("city", flat=True).distinct()
+    else:
+        cities = HospitalLead.objects.values_list("city", flat=True).distinct()
+
+    # -------------------------------
+    # FILTER BY CITY
+    # -------------------------------
+    if selected_city:
+        tasks = tasks.filter(hospital_id__city__iexact=selected_city)
+
+    # HOSPITAL LIST inside selected city
+    if selected_city:
+        hospitals = HospitalLead.objects.filter(city__iexact=selected_city)
+    elif selected_state:
+        hospitals = HospitalLead.objects.filter(state__iexact=selected_state)
     else:
         hospitals = HospitalLead.objects.all()
+
+    # -------------------------------
+    # FILTER BY HOSPITAL
+    # -------------------------------
+    if selected_hospital:
+        tasks = tasks.filter(hospital_id=selected_hospital)
+
+    # STAFF LIST inside selected hospital
+    if selected_hospital:
+        staff = Staff.objects.filter(task_assign__hospital_id=selected_hospital).distinct()
+    else:
         staff = Staff.objects.all()
-        tasks = TaskAssign.objects.all()
 
-    cities = set(HospitalLead.objects.values_list('city', flat=True))
-    # This returns all unique cities as a set (the cities will not be repeated more than once)
-    cities = [city.strip().title() for city in cities if city != '']
-    '''Return a list of non-empty cities (if city != '') with surrounding whitespace removed (.strip()).
-    title() - Capitalizes the first letter of every word.'''
-    cities = sorted(set(cities))   # Sort the cities in ascending order
-    
-    states_list = HospitalLead.objects.values_list('state', flat=True) 
-    states = sorted(set([state.strip().title() for state in states_list if state != '']))
+    # -------------------------------
+    # FILTER BY STAFF
+    # -------------------------------
+    if selected_staff:
+        tasks = tasks.filter(staff_id=selected_staff)
 
-    return render(request, 'manage-task.html', {'staff': staff, 'hospitals': hospitals, 'tasks' : tasks, 
-                                                'cities' : cities, 'states' :states})
+    # -------------------------------
+    # FILTER BY TASK TYPE
+    # -------------------------------
+    if selected_task_type:
+        tasks = tasks.filter(task_type=selected_task_type)
 
+    # -------------------------------
+    # STATE LIST
+    # -------------------------------
+    states = HospitalLead.objects.values_list("state", flat=True).distinct()
 
- 
+    return render(request, "manage-task.html", {
+        "tasks": tasks,
+        "states": states,
+        "cities": cities,
+        "hospitals": hospitals,
+        "staff": staff,
+
+        "selected_state": selected_state,
+        "selected_city": selected_city,
+        "selected_hospital": selected_hospital,
+        "selected_staff": selected_staff,
+        "selected_task_type": selected_task_type,
+    })
+
 def view_task(request, task_id):
     
     task = TaskAssign.objects.get(id = task_id)
     print(task.assign_date)
     return render(request, 'view-task.html', {'task' : task})
+
+def edit_task(request, task_id):
+    task = TaskAssign.objects.get(id=task_id)
+    staff_list = Staff.objects.all()
+    hospitals = HospitalLead.objects.all()
+
+    if request.method == "POST":
+        task.assign_date = request.POST.get("assign_date")
+        task.follow_up_date = request.POST.get("follow_up_date")
+        task.task_type = request.POST.get("task_type")
+        task.description = request.POST.get("description")
+        task.remarks = request.POST.get("remarks")
+        task.staff_id_id = request.POST.get("staff_id")
+        task.hospital_id_id = request.POST.get("hospital_id")
+
+        task.save()
+        return redirect("manage_task")
+
+    return render(request, "edit-task.html", {
+        "task": task,
+        "staff_list": staff_list,
+        "hospitals": hospitals,
+    })
+
+def Expenses(request):
+    expenses = Expense.objects.all().order_by('-created_at')
+    staff_list = Staff.objects.all()
+
+    return render(request, "expenses.html", {
+        'expenses': expenses,
+        'staff_list': staff_list,
+    })
+
+def New_Expenses(request):
+    if request.method == "POST":
+        staff_id = request.POST.get("staff")
+        expense_type = request.POST.get("expense_type")
+        description = request.POST.get("description")
+        bill_amount = request.POST.get("bill_amount")
+        date = request.POST.get("date")
+        remark = request.POST.get("remark")
+        bill_file = request.FILES.get("bill_file")
+
+        Expense.objects.create(
+            staff_id=staff_id,
+            expense_type=expense_type,
+            description=description,
+            bill_amount=bill_amount,
+            date=date,
+            remark=remark,
+            bill_file=bill_file
+        )
+
+        messages.success(request, "Expense added successfully!")
+        return redirect("Expenses")
+
+    return redirect("Expenses")
+
+from django.http import JsonResponse
+
+def get_cities(request):
+    state = request.GET.get("state")
+    cities = HospitalLead.objects.filter(
+        state=state, 
+        lead_source="Customer"
+    ).values_list("city", flat=True).distinct()
+    return JsonResponse({"cities": list(cities)})
+
+def get_hospitals(request):
+    city = request.GET.get("city")
+    hospitals = HospitalLead.objects.filter(
+        city=city,
+        lead_source="Customer"
+    ).values("id", "hospital_name")
+    return JsonResponse({"hospitals": list(hospitals)})
+
+from django.http import JsonResponse
+from .models import Vendor
+
+def ajax_vendor_cities(request):
+    state = request.GET.get("state", "")
+    cities = list(Vendor.objects.filter(state__iexact=state)
+                  .values_list("city", flat=True).distinct())
+    return JsonResponse({"cities": cities})
+
+def ajax_vendors_by_city(request):
+    city = request.GET.get("city", "")
+    vendors = Vendor.objects.filter(city__iexact=city).values(
+        "id", "vendor_id", "vendor_name", "company_name"
+    )
+    return JsonResponse({"vendors": list(vendors)})
+
 

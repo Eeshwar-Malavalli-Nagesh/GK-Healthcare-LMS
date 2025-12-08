@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'leads',
     'django_bootstrap5',
     'widget_tweaks',
+    'hr',
 ]
 
 MIDDLEWARE = [

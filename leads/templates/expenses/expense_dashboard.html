@@ -1,485 +1,346 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Expense Dashboard{% endblock %}
+{% block title %}Staff Expense Dashboard{% endblock %}
 
 {% block content %}
+
 <style>
-    :root {
-        --primary-color: #5e72e4;
-        --success-color: #2dce89;
-        --warning-color: #fb6340;
-        --danger-color: #f5365c;
+    .page-header-exp {
+        background: linear-gradient(135deg, #4361ee 0%, #4895ef 50%, #4cc9f0 100%);
+        color: #fff;
+        padding: 1.5rem 1.25rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
     }
 
-    body {
-        background-color: #f8f9fe;
+    .page-header-exp .page-title {
+        font-size: 1.5rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
     }
 
-    .dashboard-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        border-radius: 0 0 1rem 1rem;
-    }
-
-    .stats-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .stats-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        text-align: center;
-        border-left: 4px solid;
-    }
-
-    .stats-card.total { border-left-color: var(--primary-color); }
-    .stats-card.paid { border-left-color: var(--success-color); }
-    .stats-card.pending { border-left-color: var(--warning-color); }
-    .stats-card.projects { border-left-color: var(--danger-color); }
-
-    .stats-number {
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-
-    .stats-label {
-        color: #6c757d;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .projects-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .project-card {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-        border: 1px solid #e9ecef;
-    }
-
-    .project-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-
-    .project-header {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        padding: 1.5rem;
-        border-bottom: 1px solid #dee2e6;
-        position: relative;
-    }
-
-    .project-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
-    }
-
-    .project-id {
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-
-    /* New styles for edit/delete buttons */
-    .project-controls {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .btn-control {
-        padding: 0.4rem 0.6rem;
+    .stat-card {
+        border-radius: 0.75rem;
         border: none;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        display: inline-flex;
+        box-shadow: 0 0.25rem 0.75rem rgba(15, 23, 42, 0.08);
+    }
+
+    .stat-card-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        display: flex;
         align-items: center;
         justify-content: center;
-        min-width: 32px;
-        height: 32px;
-    }
-
-    .btn-edit {
-        background: #6c757d;
-        color: white;
-    }
-
-    .btn-edit:hover {
-        background: #5a6268;
-        color: white;
-        transform: translateY(-1px);
-    }
-
-    .btn-delete {
-        background: var(--danger-color);
-        color: white;
-    }
-
-    .btn-delete:hover {
-        background: #dc3545;
-        color: white;
-        transform: translateY(-1px);
-    }
-
-    .project-body {
-        padding: 1.5rem;
-    }
-
-    .project-stats {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .stat-item {
-        text-align: center;
-    }
-
-    .stat-value {
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin-Bottom: 0.25rem;
+        font-size: 1.1rem;
     }
 
     .stat-label {
-        font-size: 0.8rem;
-        color: #6c757d;
+        font-size: 0.85rem;
         text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #6c757d;
+        margin-bottom: 0.15rem;
     }
 
-    .project-actions {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: space-between;
+    .stat-value {
+        font-size: 1.35rem;
+        font-weight: 600;
     }
 
-    .btn-project {
-        flex: 1;
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 6px;
-        font-weight: 500;
-        text-decoration: none;
-        text-align: center;
-        transition: all 0.2s ease;
+    .filter-card {
+        border-radius: 0.75rem;
+    }
+
+    .badge-expense-type {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 999px;
+    }
+
+    .table td, .table th {
+        vertical-align: middle;
         font-size: 0.9rem;
     }
 
-    .btn-view {
-        background: var(--primary-color);
-        color: white;
+    .amount-text {
+        font-weight: 600;
     }
 
-    .btn-add {
-        background: var(--success-color);
-        color: white;
+    .mobile-expense-card {
+        border-radius: 0.75rem;
+        border: 1px solid #e5e7eb;
     }
 
-    .btn-project:hover {
-        transform: translateY(-1px);
-        opacity: 0.9;
-        color: white;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        color: #6c757d;
-    }
-
-    .empty-state-icon {
-        font-size: 4rem;
-        color: #dee2e6;
-        margin-bottom: 1rem;
-    }
-
-    /* Modal styles for delete confirmation */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.5);
-    }
-
-    .modal-content {
-        background-color: white;
-        margin: 15% auto;
-        padding: 2rem;
-        border-radius: 8px;
-        width: 90%;
-        max-width: 400px;
-        text-align: center;
-    }
-
-    .modal-buttons {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 1.5rem;
-    }
-
-    .modal-btn {
-        padding: 0.5rem 1.5rem;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: 500;
-    }
-
-    .modal-btn-confirm {
-        background: var(--danger-color);
-        color: white;
-    }
-
-    .modal-btn-cancel {
-        background: #6c757d;
-        color: white;
-    }
-
-    @media (max-width: 768px) {
-        .dashboard-header {
-            padding: 1rem;
+    @media (max-width: 576px) {
+        .page-header-exp {
+            padding: 1.1rem 1rem;
         }
-        
-        .stats-cards {
-            grid-template-columns: 1fr;
+
+        .page-header-exp .page-title {
+            font-size: 1.25rem;
         }
-        
-        .projects-grid {
-            grid-template-columns: 1fr;
+
+        .stat-value {
+            font-size: 1.15rem;
         }
     }
 </style>
 
-<div class="dashboard-header">
-    <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="mb-2">
-                    <i class="fas fa-chart-line me-2"></i>
-                    Expense Dashboard
-                </h1>
-                <p class="mb-0 opacity-75">Track and manage your project expenses</p>
-            </div>
-            <a href="{% url 'add_project' %}" class="btn btn-success btn-lg">
-                <i class="fas fa-plus me-2"></i>
-                New Project
-            </a>
+<div class="page-header-exp mb-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="page-title mb-1">
+                <i class="fas fa-wallet me-2"></i>Staff Expense Dashboard
+            </h1>
+            <p class="mb-0 small text-light">
+                Track staff expenses, filter by type / staff / date and monitor totals.
+            </p>
         </div>
     </div>
 </div>
 
-<div class="container-fluid">
-    <!-- Statistics Cards -->
-    <div class="stats-cards">
-        <div class="stats-card projects">
-            <div class="stats-number" style="color: var(--danger-color);">
-                {{ total_projects }}
-            </div>
-            <div class="stats-label">Total Projects</div>
-        </div>
-        <div class="stats-card total">
-            <div class="stats-number" style="color: var(--primary-color);">
-                ₹{{ total_expenses|default:0|floatformat:2 }}
-            </div>
-            <div class="stats-label">Total Expenses</div>
-        </div>
-        <div class="stats-card paid">
-            <div class="stats-number" style="color: var(--success-color);">
-                ₹{{ total_paid|default:0|floatformat:2 }}
-            </div>
-            <div class="stats-label">Paid Amount</div>
-        </div>
-        <div class="stats-card pending">
-            <div class="stats-number" style="color: var(--warning-color);">
-                ₹{{ total_pending|default:0|floatformat:2 }}
-            </div>
-            <div class="stats-label">Pending Amount</div>
-        </div>
-    </div>
-
-    <!-- Projects Grid -->
-    {% if projects %}
-        <div class="projects-grid">
-            {% for project in projects %}
-                <div class="project-card">
-                    <div class="project-header">
-                        <!-- Edit and Delete Buttons -->
-                        <div class="project-controls">
-                            <a href="{% url 'edit_project' project.id %}" class="btn-control btn-edit" title="Edit Project">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button onclick="confirmDelete({{ project.id }}, '{{ project.project_name }}')" class="btn-control btn-delete" title="Delete Project">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="project-title">{{ project.project_name }}</div>
-                        <div class="project-id">ID: {{ project.project_id }}</div>
-                        <small class="text-muted">
-                            <i class="fas fa-calendar-alt me-1"></i>
-                            Started: {{ project.started_date|date:"M d, Y" }}
-                        </small>
-                    </div>
-                    <div class="project-body">
-                        <div class="project-stats">
-                            <div class="stat-item">
-                                <div class="stat-value" style="color: var(--primary-color);">
-                                    ₹{{ project.calculated_total|floatformat:2 }}
-                                </div>
-                                <div class="stat-label">Total</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" style="color: var(--success-color);">
-                                    {{ project.calculated_count }}
-                                </div>
-                                <div class="stat-label">Expenses</div>
-                            </div>
-                        </div>
-                        <div class="project-actions">
-                            <a href="{% url 'project_detail' project.id %}" class="btn-project btn-view">
-                                <i class="fas fa-eye me-1"></i>
-                                View Details
-                            </a>
-                            <a href="{% url 'add_expense' project.id %}" class="btn-project btn-add">
-                                <i class="fas fa-plus me-1"></i>
-                                Add Expense
-                            </a>
-                        </div>
-                    </div>
+<!-- SUMMARY CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="card stat-card">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">Today</div>
+                    <div class="stat-value">₹ {{ total_today|floatformat:2 }}</div>
                 </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="empty-state">
-            <div class="empty-state-icon">
-                <i class="fas fa-folder-open"></i>
+                <div class="stat-card-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
             </div>
-            <h4>No Projects Found</h4>
-            <p class="mb-4">Start by creating your first project to track expenses.</p>
-            <a href="{% url 'add_project' %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-plus me-2"></i>
-                Create Your First Project
-            </a>
         </div>
-    {% endif %}
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="modal">
-    <div class="modal-content">
-        <h4 style="color: var(--danger-color); margin-bottom: 1rem;">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            Confirm Delete
-        </h4>
-        <p id="deleteMessage">Are you sure you want to delete this project?</p>
-        <div class="modal-buttons">
-            <button onclick="deleteProject()" class="modal-btn modal-btn-confirm">
-                <i class="fas fa-trash me-1"></i>
-                Delete
-            </button>
-            <button onclick="closeModal()" class="modal-btn modal-btn-cancel">
-                <i class="fas fa-times me-1"></i>
-                Cancel
-            </button>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card stat-card">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">This Month</div>
+                    <div class="stat-value">₹ {{ total_this_month|floatformat:2 }}</div>
+                </div>
+                <div class="stat-card-icon bg-success bg-opacity-10 text-success">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card stat-card">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label">All Time</div>
+                    <div class="stat-value">₹ {{ total_all_time|floatformat:2 }}</div>
+                </div>
+                <div class="stat-card-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="fas fa-infinity"></i>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<script>
-let projectToDelete = null;
+<!-- FILTERS -->
+<div class="card filter-card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-filter me-2"></i>Filters
+        </h5>
+        <button class="btn btn-sm btn-outline-secondary d-md-none" type="button"
+                data-bs-toggle="collapse" data-bs-target="#filterBody" aria-expanded="false">
+            Show / Hide
+        </button>
+    </div>
+    <div class="collapse show" id="filterBody">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
 
-function confirmDelete(projectId, projectName) {
-    projectToDelete = projectId;
-    document.getElementById('deleteMessage').textContent = 
-        `Are you sure you want to delete "${projectName}"? This action cannot be undone.`;
-    document.getElementById('deleteModal').style.display = 'block';
-}
+                <!-- Staff Filter -->
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Staff</label>
+                    <select name="staff" class="form-select">
+                        <option value="">All Staff</option>
+                        {% for staff in staff_members %}
+                            <option value="{{ staff.id }}"
+                                    {% if selected_staff|default:''|stringformat:"s" == staff.id|stringformat:"s" %}selected{% endif %}>
+                                {{ staff.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-function closeModal() {
-    document.getElementById('deleteModal').style.display = 'none';
-    projectToDelete = null;
-}
+                <!-- Expense Type Filter -->
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Expense Type</label>
+                    <select name="type" class="form-select">
+                        <option value="">All Types</option>
+                        {% for key, label in expense_types %}
+                            <option value="{{ key }}"
+                                    {% if selected_expense_type == key %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-function deleteProject() {
-    if (projectToDelete) {
-        // Create a form and submit it to delete the project
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `{% url 'delete_project' 0 %}`.replace('0', projectToDelete);
-        
-        // Add CSRF token
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-        if (csrfToken) {
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrfmiddlewaretoken';
-            csrfInput.value = csrfToken.value;
-            form.appendChild(csrfInput);
-        } else {
-            // If no CSRF token found, add it from Django's cookie
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrfmiddlewaretoken';
-            csrfInput.value = getCookie('csrftoken');
-            form.appendChild(csrfInput);
-        }
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-    closeModal();
-}
+                <!-- Date Range -->
+                <div class="col-6 col-md-2">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" class="form-control"
+                           value="{{ start_date }}">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" class="form-control"
+                           value="{{ end_date }}">
+                </div>
 
-// Function to get CSRF token from cookie
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
+                <!-- Buttons -->
+                <div class="col-12 col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>Apply
+                    </button>
+                    <a href="{% url 'expense_dashboard' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('deleteModal');
-    if (event.target == modal) {
-        closeModal();
-    }
-}
-</script>
+<!-- EXPENSE LIST -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-receipt me-2"></i>Expenses
+        </h5>
+        <a href="{% url 'add_staff_expense' %}" class="btn btn-sm btn-success">
+            <i class="fas fa-plus me-1"></i>Add Expense
+        </a>
+    </div>
+
+    <div class="card-body p-0">
+
+        {% if expenses %}
+            <!-- Desktop / Tablet Table -->
+            <div class="table-responsive d-none d-sm-block">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Staff</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Bill</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for exp in expenses %}
+                        <tr>
+                            <td>
+                                {{ exp.created_at|date:"M d, Y" }}<br>
+                                <small class="text-muted">{{ exp.created_at|date:"H:i" }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ exp.staff.name }}</strong><br>
+                                <small class="text-muted">{{ exp.staff.email }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info bg-opacity-25 text-info badge-expense-type">
+                                    {{ exp.get_expense_type_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if exp.description %}
+                                    {{ exp.description|truncatechars:80 }}
+                                {% else %}
+                                    <span class="text-muted">No description</span>
+                                {% endif %}
+                                {% if exp.remark %}
+                                    <br><small class="text-muted">Remark: {{ exp.remark|truncatechars:60 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="amount-text">₹ {{ exp.amount|floatformat:2 }}</span>
+                            </td>
+                            <td>
+                                {% if exp.bill_image %}
+                                    <a href="{{ exp.bill_image.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-file-image me-1"></i>View
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">No bill</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="d-block d-sm-none p-2">
+                {% for exp in expenses %}
+                    <div class="mobile-expense-card p-3 mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div>
+                                <strong>{{ exp.staff.name }}</strong><br>
+                                <small class="text-muted">{{ exp.created_at|date:"M d, Y H:i" }}</small>
+                            </div>
+                            <span class="badge bg-info bg-opacity-25 text-info badge-expense-type">
+                                {{ exp.get_expense_type_display }}
+                            </span>
+                        </div>
+                        <div class="mt-1">
+                            <div class="mb-1">
+                                <span class="text-muted small">Amount:</span>
+                                <span class="amount-text">₹ {{ exp.amount|floatformat:2 }}</span>
+                            </div>
+                            <div class="mb-1">
+                                <span class="text-muted small">Description:</span><br>
+                                {% if exp.description %}
+                                    <span>{{ exp.description|truncatechars:80 }}</span>
+                                {% else %}
+                                    <span class="text-muted">No description</span>
+                                {% endif %}
+                            </div>
+                            {% if exp.remark %}
+                            <div class="mb-1">
+                                <span class="text-muted small">Remark:</span><br>
+                                <span>{{ exp.remark|truncatechars:80 }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2">
+                            {% if exp.bill_image %}
+                                <a href="{{ exp.bill_image.url }}" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+                                    <i class="fas fa-file-image me-1"></i>View Bill
+                                </a>
+                            {% else %}
+                                <span class="text-muted small">No bill uploaded</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+        {% else %}
+            <div class="p-4 text-center text-muted">
+                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                <p class="mb-1">No expenses found for the selected filters.</p>
+                <a href="{% url 'add_staff_expense' %}" class="btn btn-sm btn-success mt-2">
+                    <i class="fas fa-plus me-1"></i>Add First Expense
+                </a>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
 
 {% endblock %}
