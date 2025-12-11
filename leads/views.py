@@ -423,6 +423,13 @@ def hospital_leads_list(request):
             Q(city__icontains=search_query) |
             Q(state__icontains=search_query)
         )
+    total_leads = HospitalLead.objects.count()
+    total_customers = HospitalLead.objects.filter(lead_source="Customer").count()
+    total_normal_leads = HospitalLead.objects.filter(lead_source="Lead").count()
+    # DROPDOWN LIST DATA -------------------------------------
+    hospitals = HospitalLead.objects.all()
+    cities = HospitalLead.objects.exclude(city="").values_list('city', flat=True).distinct()
+    states = HospitalLead.objects.exclude(state="").values_list('state', flat=True).distinct()
 
     # --- For dropdowns (ALL leads, not filtered, or you can use distinct over full table) ---
     base_queryset = HospitalLead.objects.all()
@@ -1056,6 +1063,10 @@ def save_customer(request):
 
     return redirect('add_customer')
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5a8ff3d62d26878a0acd7b30bf9ac533542393fc
 @user_passes_test(lambda u: u.is_superuser)
 def customer_list(request):
     """Display only CUSTOMER leads with filters."""
@@ -2182,6 +2193,10 @@ def delete_task(request, task_id):
     messages.success(request, "Task deleted successfully!")
     return redirect("manage_task")
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5a8ff3d62d26878a0acd7b30bf9ac533542393fc
 from django.contrib import messages
 from django.shortcuts import redirect
 
@@ -2226,6 +2241,11 @@ def assign_task(request):
         "states": states
     })
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 5a8ff3d62d26878a0acd7b30bf9ac533542393fc
 def manage_staff(request):
     selected_staff = request.GET.get("staff", "")
 
