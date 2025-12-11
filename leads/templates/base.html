@@ -204,6 +204,35 @@
             margin-bottom: 20px;
             color: var(--dark-color);
         }
+        /* Make Sidebar Scrollable */
+        /* Make Sidebar Scrollable but Hide Scrollbar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #2563EB, #10B981);
+            color: white;
+            height: 100vh;
+            overflow-y: scroll;   /* Enable scrolling */
+            overflow-x: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        /* Hide scrollbar in Chrome, Edge, Safari */
+        .sidebar::-webkit-scrollbar {
+            width: 0px;
+        }
+
+        /* Hide scrollbar in Firefox */
+        .sidebar {
+            scrollbar-width: none;
+        }
+
+        /* Hide scrollbar in Internet Explorer / Edge Legacy */
+        .sidebar {
+            -ms-overflow-style: none;
+        }
+
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -236,6 +265,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/manage-staff/' %}active{% endif %}" href="{% url 'manage_staff' %}">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Manage Staff</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.path == '/assign-task/' %}active{% endif %}" href="{% url 'assign_task' %}">
                         <i class="fas fa-tasks"></i>
                         <span>Assign Task</span>
@@ -245,6 +280,12 @@
                     <a class="nav-link {% if request.path == '/manage-task/' %}active{% endif %}" href="{% url 'manage_task' %}">
                         <i class="fas fa-users"></i>
                         <span>Manage Task</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/staff-expense//' %}active{% endif %}" href="{% url 'staff_expense_list' %}">
+                        <i class="fas fa-users"></i>
+                        <span>Expense Tracker</span>
                     </a>
                 </li>
                 <!-- <li class="nav-item">
